@@ -13,7 +13,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import type { Issue } from '@/lib/types';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, parseISO } from 'date-fns';
 
 export function DepartmentPerformanceChart({ issues }: { issues: Issue[] }) {
   const data = React.useMemo(() => {
@@ -27,8 +27,10 @@ export function DepartmentPerformanceChart({ issues }: { issues: Issue[] }) {
       }
       departments[issue.assignedTo].count++;
       
-      if (issue.status === 'Resolved' && issue.resolvedAt) {
-        departments[issue.assignedTo].totalDays += differenceInDays(issue.resolvedAt, issue.reportedAt);
+      if (issue.status === 'Resolved' && issue.resolvedAt && issue.reportedAt) {
+        const resolvedDate = typeof issue.resolvedAt === 'string' ? parseISO(issue.resolvedAt) : issue.resolvedAt;
+        const reportedDate = typeof issue.reportedAt === 'string' ? parseISO(issue.reportedAt) : issue.reportedAt;
+        departments[issue.assignedTo].totalDays += differenceInDays(resolvedDate, reportedDate);
         departments[issue.assignedTo].resolvedCount++;
       }
     });

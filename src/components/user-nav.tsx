@@ -1,8 +1,8 @@
 
-
 'use client';
 
 import * as React from 'react';
+import useSWR from 'swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,19 +17,14 @@ import {
 import { Bell, LogOut, Settings, ShieldAlert, User, LifeBuoy } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from './ui/badge';
-import { AppContext } from '@/app/(app)/layout';
+import type { Issue } from '@/lib/types';
 
 export function UserNav() {
-  const context = React.useContext(AppContext);
-  
-  if (!context) {
-    return null;
-  }
-  const { issues } = context;
+  const { data: issues } = useSWR<Issue[]>('/api/issues');
 
-  const pendingIssuesCount = issues.filter(
+  const pendingIssuesCount = issues?.filter(
     (i) => i.status === 'Pending' || i.status === 'Approved'
-  ).length;
+  ).length || 0;
 
   return (
     <div className="flex items-center gap-4">

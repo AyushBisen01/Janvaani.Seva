@@ -1,7 +1,8 @@
 
 'use client';
 
-import { users } from '@/lib/data';
+import useSWR from 'swr';
+import { User, users as initialUsers } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -29,8 +30,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UsersPage() {
+  const { data: users, isLoading } = useSWR<User[]>('/api/users');
+
+  if (isLoading || !users) {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-4 w-96" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-96 w-full" />
+            </CardContent>
+        </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>

@@ -1,6 +1,7 @@
 
 'use client';
 import * as React from 'react';
+import useSWR from 'swr';
 import { IssuesDataTable } from '@/components/issues/data-table';
 import {
   Card,
@@ -19,21 +20,29 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
-import { AppContext } from '../layout';
-import type { IssuePriority, IssueStatus } from '@/lib/types';
+import type { Issue, IssuePriority, IssueStatus } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function IssuesPage() {
-  const context = React.useContext(AppContext);
+  const { data: issues, isLoading } = useSWR<Issue[]>('/api/issues');
   const [search, setSearch] = React.useState('');
   const [status, setStatus] = React.useState('all');
   const [priority, setPriority] = React.useState('all');
   
-  if (!context) {
-    return null;
+  if (isLoading || !issues) {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-8 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-96 w-full" />
+            </CardContent>
+        </Card>
+    )
   }
-
-  const { issues } = context;
 
   const filteredIssues = issues.filter(issue => {
     const searchLower = search.toLowerCase();

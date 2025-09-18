@@ -28,18 +28,9 @@ import { UserNav } from '@/components/user-nav';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { PageHeader } from '@/components/page-header';
+import { SWRConfig } from 'swr';
 
-import { issues as initialIssues, users as initialUsers } from '@/lib/data';
-import type { Issue, User } from '@/lib/types';
-
-
-export const AppContext = React.createContext<{
-  issues: Issue[];
-  setIssues: React.Dispatch<React.SetStateAction<Issue[]>>;
-  users: User[];
-  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
-} | null>(null);
-
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -68,11 +59,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return pageTitles[pathname] || 'CivicMonitor';
   };
 
-  const [issues, setIssues] = React.useState<Issue[]>(initialIssues);
-  const [users, setUsers] = React.useState<User[]>(initialUsers);
-
   return (
-     <AppContext.Provider value={{ issues, setIssues, users, setUsers }}>
+     <SWRConfig value={{ fetcher }}>
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
@@ -120,6 +108,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </main>
         </SidebarInset>
       </SidebarProvider>
-    </AppContext.Provider>
+    </SWRConfig>
   );
 }

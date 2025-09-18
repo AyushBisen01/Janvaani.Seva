@@ -1,6 +1,7 @@
 
 'use client';
 import * as React from 'react';
+import useSWR from 'swr';
 
 import { StatCard } from '@/components/dashboard/stat-card';
 import {
@@ -15,20 +16,32 @@ import { RecentIssues } from '@/components/dashboard/recent-issues';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapProvider } from '@/components/map/map-provider';
 import { IssueMapOverview } from '@/components/dashboard/issue-map-overview';
-import { AppContext } from '../layout';
 import { IssuesByStatusChart } from '@/components/dashboard/issues-by-status-chart';
 import { IssuesByPriorityChart } from '@/components/dashboard/issues-by-priority-chart';
 import { IssuesOverTimeChart } from '@/components/dashboard/issues-over-time-chart';
+import type { Issue } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function DashboardPage() {
-    const context = React.useContext(AppContext);
+    const { data: issues, isLoading } = useSWR<Issue[]>('/api/issues');
 
-    if (!context) {
-        return null;
+    if (isLoading || !issues) {
+      return (
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+          </div>
+          <div className="grid gap-6 lg:grid-cols-5">
+            <Skeleton className="lg:col-span-3 h-96" />
+            <Skeleton className="lg:col-span-2 h-96" />
+          </div>
+        </div>
+      );
     }
-
-    const { issues } = context;
 
   const totalIssues = issues.length;
   const newIssues = issues.filter(

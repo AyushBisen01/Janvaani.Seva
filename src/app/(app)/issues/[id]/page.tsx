@@ -4,6 +4,7 @@
 import * as React from 'react';
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
+import useSWR from 'swr';
 import {
   Card,
   CardContent,
@@ -31,9 +32,9 @@ import { IssueMapOverview } from '@/components/dashboard/issue-map-overview';
 import { FormattedDate } from '@/components/formatted-date';
 import { cn } from '@/lib/utils';
 import type { Issue, IssuePriority, IssueStatus } from '@/lib/types';
-import { AppContext } from '../../layout';
 import { useToast } from '@/hooks/use-toast';
 import { AssignIssueDialog } from '@/components/issues/assign-issue-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statusColors: Record<IssueStatus, string> = {
     Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -51,46 +52,90 @@ const priorityColors: Record<IssuePriority, string> = {
 
 export default function IssueDetailPage() {
   const params = useParams();
+  const id = params.id;
   const { toast } = useToast();
-  const context = React.useContext(AppContext);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = React.useState(false);
 
-  if (!context) {
-    return null;
+  const { data: issues, mutate, isLoading } = useSWR<Issue[]>('/api/issues');
+  const issue = issues?.find((i) => i.id === id);
+
+  const updateIssue = async (id: string, updates: Partial<Issue>) => {
+    try {
+      // Optimistically update the UI
+      mutate(
+        issues?.map((i) => (i.id === id ? { ...i, ...updates } : i)),
+        false
+      );
+
+      // Make API call to update the issue
+      await fetch(`/api/issues`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
+      });
+
+      // Trigger a revalidation
+      mutate();
+    } catch (error) {
+      console.error('Failed to update issue:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update failed',
+        description: 'Could not update the issue.',
+      });
+      // Optionally rollback optimistic update
+      mutate();
+    }
+  };
+
+  if (isLoading) {
+    return (
+        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-48 w-full" />
+        </div>
+        <div className="space-y-6">
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-80 w-full" />
+        </div>
+    </div>
+    )
   }
-  
-  const { issues, setIssues } = context;
-  const issue = issues.find((i) => i.id === params.id);
 
   if (!issue) {
-    notFound();
+    // SWR hasn't loaded the data yet or issue not found
+    if (!isLoading) {
+       notFound();
+    }
+    return null;
   }
 
   const handleApprove = () => {
-    setIssues(issues.map(i => i.id === issue.id ? {...i, status: 'Approved'} : i));
+    updateIssue(issue.id, { status: 'Approved' });
     toast({ title: "Issue Approved", description: `Issue #${issue.id} has been approved.`});
   }
 
   const handleReject = () => {
-    setIssues(issues.map(i => i.id === issue.id ? {...i, status: 'Rejected'} : i));
+    updateIssue(issue.id, { status: 'Rejected' });
     toast({ title: "Issue Rejected", description: `Issue #${issue.id} has been rejected.`});
   }
   
   const handleAssign = (ids: string[], department: string, priority: IssuePriority) => {
-    setIssues((prev) =>
-      prev.map((i) =>
-        ids.includes(i.id)
-          ? { ...i, status: 'Assigned', assignedTo: department, priority, statusHistory: [...(i.statusHistory || []), {status: 'Assigned', date: new Date()}] }
-          : i
-      )
-    );
+    const issueId = ids[0];
+     updateIssue(issueId, { 
+        status: 'Assigned', 
+        assignedTo: department, 
+        priority,
+        statusHistory: [...(issue.statusHistory || []), {status: 'Assigned', date: new Date().toISOString() as any}] 
+    });
     toast({ title: "Issue Assigned", description: `Issue #${issue.id} has been assigned to ${department}.`});
   };
   
   const issueDetails = [
     { icon: Layers, label: 'Category', value: issue.category },
     { icon: MapPin, label: 'Location', value: issue.location.address },
-    { icon: Calendar, label: 'Reported On', value: <FormattedDate date={issue.reportedAt} formatStr="PPP p" /> },
+    { icon: Calendar, label: 'Reported On', value: <FormattedDate date={new Date(issue.reportedAt)} formatStr="PPP p" /> },
     { icon: HardHat, label: 'Assigned To', value: issue.assignedTo || "N/A" },
     { icon: User, label: 'Citizen', value: `${issue.citizen.name} (${issue.citizen.contact})` },
   ];
@@ -164,7 +209,7 @@ export default function IssueDetailPage() {
                               <p className="text-sm">
                                   <span className="font-semibold">{issue.citizen.name}</span> reported the issue.
                               </p>
-                              <p className="text-xs text-muted-foreground"><FormattedDate date={issue.reportedAt} formatStr="PPP p" /></p>
+                              <p className="text-xs text-muted-foreground"><FormattedDate date={new Date(issue.reportedAt)} formatStr="PPP p" /></p>
                           </div>
                       </li>
                       <li className="flex gap-4">
@@ -177,7 +222,7 @@ export default function IssueDetailPage() {
                               <p className="text-sm">
                                   <span className="font-semibold">AI System</span> automatically approved and categorized the issue.
                               </p>
-                              <p className="text-xs text-muted-foreground"><FormattedDate date={new Date(issue.reportedAt.getTime() + 5 * 60000)} formatStr="PPP p" /></p>
+                              <p className="text-xs text-muted-foreground"><FormattedDate date={new Date(new Date(issue.reportedAt).getTime() + 5 * 60000)} formatStr="PPP p" /></p>
                           </div>
                       </li>
                   </ul>
@@ -201,7 +246,7 @@ export default function IssueDetailPage() {
               />
             </CardContent>
           </Card>
-          {issue.proofUrl && (
+          {issue.proofUrl && issue.resolvedAt && (
             <Card>
               <CardHeader>
                 <CardTitle className="font-headline">Proof of Work</CardTitle>
@@ -215,7 +260,7 @@ export default function IssueDetailPage() {
                   className="rounded-lg object-cover"
                   data-ai-hint={issue.proofHint}
                 />
-                <p className="text-sm text-muted-foreground mt-2">Work completed on <FormattedDate date={issue.resolvedAt} formatStr="PPP" /></p>
+                <p className="text-sm text-muted-foreground mt-2">Work completed on <FormattedDate date={new Date(issue.resolvedAt)} formatStr="PPP" /></p>
               </CardContent>
             </Card>
           )}

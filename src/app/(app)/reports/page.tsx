@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -21,17 +22,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FileSpreadsheet, FileText } from 'lucide-react';
-import { AppContext } from '../layout';
 import { DepartmentPerformanceChart } from '@/components/reports/department-performance-chart';
 import { ResolutionFunnelChart } from '@/components/reports/resolution-funnel-chart';
+import type { Issue, User } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ReportsPage() {
-  const context = React.useContext(AppContext);
+  const { data: issues, isLoading: isLoadingIssues } = useSWR<Issue[]>('/api/issues');
+  const { data: users, isLoading: isLoadingUsers } = useSWR<User[]>('/api/users');
 
-  if (!context) {
-    return null;
+  if (isLoadingIssues || isLoadingUsers || !issues || !users) {
+    return (
+        <div className="space-y-8">
+            <Skeleton className="h-12 w-1/3" />
+            <Skeleton className="h-64 max-w-3xl" />
+             <Skeleton className="h-12 w-1/3" />
+            <div className="grid gap-6 lg:grid-cols-5">
+                <Skeleton className="lg:col-span-3 h-96" />
+                <Skeleton className="lg:col-span-2 h-96" />
+            </div>
+        </div>
+    )
   }
-  const { issues, users } = context;
 
   return (
     <div className="space-y-8">

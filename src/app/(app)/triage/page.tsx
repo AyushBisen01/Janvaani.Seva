@@ -1,8 +1,8 @@
 
-
 'use client';
 
 import * as React from 'react';
+import useSWR from 'swr';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -40,9 +40,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import type { Issue, IssuePriority } from '@/lib/types';
 import Image from 'next/image';
-import { AppContext } from '../layout';
 import { useToast } from '@/hooks/use-toast';
 import { AssignIssueDialog } from '@/components/issues/assign-issue-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function TriageDataTable({
   issues,
@@ -106,7 +106,7 @@ function TriageDataTable({
                 />
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {formatDistanceToNow(issue.reportedAt, { addSuffix: true })}
+                {formatDistanceToNow(new Date(issue.reportedAt), { addSuffix: true })}
               </TableCell>
               <TableCell>
                 <Badge variant={issue.priority === 'High' ? 'destructive' : issue.priority === 'Medium' ? 'secondary' : 'outline'}>{issue.priority}</Badge>
@@ -151,31 +151,66 @@ function TriageDataTable({
 export default function TriagePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const context = React.useContext(AppContext);
+  const { data: allIssues, mutate, isLoading } = useSWR<Issue[]>('/api/issues');
+
   const [assignQueue, setAssignQueue] = React.useState<Issue[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = React.useState(false);
   const [selectedIssues, setSelectedIssues] = React.useState<string[]>([]);
   const [activeTab, setActiveTab] = React.useState('pending');
 
-  if (!context) {
-    return null;
+  const updateIssues = async (updates: (Partial<Issue> & { id: string })[]) => {
+    try {
+        const updatedIssues = allIssues?.map(issue => {
+            const update = updates.find(u => u.id === issue.id);
+            return update ? { ...issue, ...update } : issue;
+        });
+
+        // Optimistic update
+        mutate(updatedIssues, false);
+        
+        await fetch('/api/issues', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+
+        mutate();
+    } catch(e) {
+        console.error(e);
+        toast({
+            variant: 'destructive',
+            title: 'Update failed',
+            description: 'Could not update issues.',
+        });
+        mutate();
+    }
   }
-  const { issues: allIssues, setIssues: setAllIssues } = context;
+
+
+  if (isLoading || !allIssues) {
+    return (
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-4 w-96" />
+            </CardHeader>
+            <CardContent>
+                <Skeleton className="h-96 w-full" />
+            </CardContent>
+        </Card>
+    )
+  }
 
   const pendingIssues = allIssues.filter((i) => i.status === 'Pending');
   const approvedIssues = allIssues.filter((i) => i.status === 'Approved');
 
   const handleApprove = (id: string) => {
-    setAllIssues((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, status: 'Approved' } : i))
-    );
+    updateIssues([{ id, status: 'Approved' }]);
     toast({ title: "Issue Approved", description: `Issue #${id} has been moved to the auto-approved list.`});
   };
 
   const handleReject = (id: string) => {
-    setAllIssues((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, status: 'Rejected' } : i))
-    );
+    updateIssues([{ id, status: 'Rejected' }]);
      toast({ title: "Issue Rejected", description: `Issue #${id} has been rejected.`});
   };
 
@@ -194,13 +229,14 @@ export default function TriagePage() {
     department: string,
     priority: IssuePriority
   ) => {
-    setAllIssues((prev) =>
-      prev.map((i) =>
-        ids.includes(i.id)
-          ? { ...i, status: 'Assigned', assignedTo: department, priority, statusHistory: [...(i.statusHistory || []), {status: 'Assigned', date: new Date()}] }
-          : i
-      )
-    );
+    const updates = ids.map(id => ({
+        id,
+        status: 'Assigned' as const,
+        assignedTo: department,
+        priority,
+        statusHistory: [...(allIssues.find(i => i.id === id)?.statusHistory || []), {status: 'Assigned' as const, date: new Date().toISOString() as any}]
+    }));
+    updateIssues(updates);
     toast({ title: "Issues Assigned", description: `${ids.length} issue(s) have been assigned to ${department}.`});
     setSelectedIssues([]);
   };

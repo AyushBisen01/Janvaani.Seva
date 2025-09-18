@@ -1,7 +1,10 @@
 
 import type { Issue, User } from './types';
 
-export const users: User[] = [
+// This file now acts as a mock database.
+// The API routes will use these arrays as their data source.
+
+let users: User[] = [
   {
     id: 'user-1',
     name: 'Admin User',
@@ -27,7 +30,7 @@ export const users: User[] = [
   },
 ];
 
-export const issues: Issue[] = [
+let issues: Issue[] = [
   {
     id: 'CIV-001',
     category: 'Pothole',
@@ -107,3 +110,27 @@ export const issues: Issue[] = [
     imageHint: 'debris dumped'
   }
 ];
+
+// Functions to interact with the mock database
+export const getIssues = () => issues;
+
+export const getUsers = () => users;
+
+export const updateIssue = (id: string, updates: Partial<Issue>) => {
+    const issueIndex = issues.findIndex(i => i.id === id);
+    if (issueIndex !== -1) {
+        issues[issueIndex] = { ...issues[issueIndex], ...updates };
+        return issues[issueIndex];
+    }
+    return null;
+}
+
+export const updateMultipleIssues = (updates: (Partial<Issue> & {id: string})[]) => {
+    updates.forEach(update => {
+        const issueIndex = issues.findIndex(i => i.id === update.id);
+        if (issueIndex !== -1) {
+            issues[issueIndex] = { ...issues[issueIndex], ...update };
+        }
+    });
+    return issues;
+}

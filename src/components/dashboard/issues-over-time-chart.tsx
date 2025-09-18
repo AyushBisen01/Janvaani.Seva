@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, subDays } from 'date-fns';
+import { format, subDays, parseISO } from 'date-fns';
 import type { Issue } from '@/lib/types';
 
 export function IssuesOverTimeChart({ issues }: { issues: Issue[] }) {
@@ -17,7 +17,8 @@ export function IssuesOverTimeChart({ issues }: { issues: Issue[] }) {
     }, {} as {[key: string]: number});
 
     issues.forEach((issue) => {
-      const dayString = format(issue.reportedAt, 'yyyy-MM-dd');
+      const reportedDate = typeof issue.reportedAt === 'string' ? parseISO(issue.reportedAt) : issue.reportedAt;
+      const dayString = format(reportedDate, 'yyyy-MM-dd');
       if (dayString in counts) {
         counts[dayString]++;
       }
@@ -51,4 +52,3 @@ export function IssuesOverTimeChart({ issues }: { issues: Issue[] }) {
     </div>
   );
 }
-

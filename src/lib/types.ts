@@ -14,8 +14,8 @@ export interface Issue {
   };
   status: IssueStatus;
   priority: IssuePriority;
-  reportedAt: Date;
-  resolvedAt?: Date;
+  reportedAt: Date | string;
+  resolvedAt?: Date | string;
   assignedTo?: string; // Department name or staff ID
   citizen: {
     name: string;
@@ -25,7 +25,7 @@ export interface Issue {
   imageHint: string;
   proofUrl?: string;
   proofHint?: string;
-  statusHistory?: { status: IssueStatus, date: Date }[];
+  statusHistory?: { status: IssueStatus, date: Date | string }[];
 }
 
 export type UserRole = "Super Admin" | "Department Head" | "Staff";

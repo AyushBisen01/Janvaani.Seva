@@ -5,6 +5,7 @@ import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import type { Issue } from '@/lib/types';
+import Link from 'next/link';
 
 function FormattedDistanceToNow({ date }: { date: Date }) {
     const [distance, setDistance] = React.useState('');
@@ -18,13 +19,13 @@ function FormattedDistanceToNow({ date }: { date: Date }) {
 
 export function RecentIssues({issues}: {issues: Issue[]}) {
   const recentIssues = issues
-    .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
+    .sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime())
     .slice(0, 5);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-1">
       {recentIssues.map((issue) => (
-        <div key={issue.id} className="flex items-center">
+        <Link href={`/issues/${issue.id}`} key={issue.id} className="flex items-center p-2 -mx-2 rounded-md hover:bg-muted">
           <Avatar className="h-9 w-9">
              <AvatarImage
               src={`https://i.pravatar.cc/150?u=${issue.citizen.contact}`}
@@ -43,9 +44,9 @@ export function RecentIssues({issues}: {issues: Issue[]}) {
             </p>
           </div>
           <div className="ml-auto text-sm text-muted-foreground">
-            <FormattedDistanceToNow date={issue.reportedAt} />
+            <FormattedDistanceToNow date={new Date(issue.reportedAt)} />
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );
