@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'CivicMonitor',
+  title: 'Janvaani Seva',
   description: 'Admin Dashboard for Municipal Civic Issue Reporting',
 };
 

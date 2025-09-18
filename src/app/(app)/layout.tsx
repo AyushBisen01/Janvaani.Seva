@@ -56,7 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const getPageTitle = () => {
     if (pathname.startsWith('/issues/')) return 'Issue Details';
-    return pageTitles[pathname] || 'CivicMonitor';
+    return pageTitles[pathname] || 'Janvaani Seva';
   };
 
   return (
@@ -67,7 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2 p-2">
               <ShieldAlert className="size-8 text-primary" />
               <h1 className="text-2xl font-headline font-semibold text-primary">
-                CivicMonitor
+                Janvaani Seva
               </h1>
             </div>
           </SidebarHeader>

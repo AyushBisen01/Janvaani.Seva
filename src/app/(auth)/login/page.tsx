@@ -27,7 +27,7 @@ export default function LoginPage() {
     <div className="flex flex-col items-center space-y-4">
       <div className="flex items-center space-x-2 text-primary">
         <ShieldCheck className="h-10 w-10" />
-        <h1 className="text-4xl font-headline font-bold">CivicMonitor</h1>
+        <h1 className="text-4xl font-headline font-bold">Janvaani Seva</h1>
       </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
@@ -66,7 +66,7 @@ export default function LoginPage() {
         </form>
       </Card>
       <p className="text-xs text-muted-foreground">
-        &copy; {new Date().getFullYear()} CivicMonitor. All rights reserved.
+        &copy; {new Date().getFullYear()} Janvaani Seva. All rights reserved.
       </p>
     </div>
   );
