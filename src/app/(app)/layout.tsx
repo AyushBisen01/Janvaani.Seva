@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,7 +19,7 @@ import {
   BarChart2,
   Users,
   Settings,
-  ShieldCheck,
+  ShieldAlert,
   LogOut,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
@@ -28,7 +29,8 @@ import { PageHeader } from '@/components/page-header';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/issues', icon: ListChecks, label: 'Issues' },
+  { href: '/triage', icon: ShieldAlert, label: 'Triage' },
+  { href: '/issues', icon: ListChecks, label: 'All Issues' },
   { href: '/map', icon: Map, label: 'Map View' },
   { href: '/reports', icon: BarChart2, label: 'Reports' },
   { href: '/users', icon: Users, label: 'User Management' },
@@ -37,7 +39,8 @@ const navItems = [
 
 const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard Overview',
-  '/issues': 'Issue Management',
+  '/triage': 'Issue Triage',
+  '/issues': 'All Issues',
   '/map': 'Interactive Map',
   '/reports': 'Analytics & Reports',
   '/users': 'User Management',
@@ -56,7 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <ShieldCheck className="size-8 text-primary" />
+            <ShieldAlert className="size-8 text-primary" />
             <h1 className="text-2xl font-headline font-semibold text-primary">
               CivicMonitor
             </h1>
@@ -67,13 +70,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                  as={Link}
+                  asChild
                   href={item.href}
                   isActive={pathname.startsWith(item.href)}
                   tooltip={{ children: item.label }}
                 >
-                  <item.icon />
-                  <span>{item.label}</span>
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -82,9 +87,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/login" tooltip={{ children: 'Logout' }}>
-                  <LogOut />
-                  <span>Logout</span>
+                <SidebarMenuButton asChild href="/login" tooltip={{ children: 'Logout' }}>
+                  <Link href="/login">
+                    <LogOut />
+                    <span>Logout</span>
+                  </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
@@ -101,3 +108,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
