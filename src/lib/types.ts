@@ -1,4 +1,5 @@
 
+
 export type IssueStatus = "Pending" | "Approved" | "Assigned" | "Resolved" | "Rejected";
 export type IssuePriority = "High" | "Medium" | "Low";
 
@@ -24,13 +25,16 @@ export interface Issue {
   imageHint: string;
   proofUrl?: string;
   proofHint?: string;
+  statusHistory?: { status: IssueStatus, date: Date }[];
 }
+
+export type UserRole = "Super Admin" | "Department Head" | "Staff";
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "Super Admin" | "Department Head" | "Staff";
+  role: UserRole;
   avatarUrl: string;
   department?: string;
 }

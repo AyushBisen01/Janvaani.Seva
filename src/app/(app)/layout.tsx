@@ -2,6 +2,7 @@
 
 'use client';
 
+import * as React from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -27,6 +28,18 @@ import { UserNav } from '@/components/user-nav';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { PageHeader } from '@/components/page-header';
+
+import { issues as initialIssues, users as initialUsers } from '@/lib/data';
+import type { Issue, User } from '@/lib/types';
+
+
+export const AppContext = React.createContext<{
+  issues: Issue[];
+  setIssues: React.Dispatch<React.SetStateAction<Issue[]>>;
+  users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
+} | null>(null);
+
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -55,56 +68,58 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return pageTitles[pathname] || 'CivicMonitor';
   };
 
+  const [issues, setIssues] = React.useState<Issue[]>(initialIssues);
+  const [users, setUsers] = React.useState<User[]>(initialUsers);
+
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
-            <ShieldAlert className="size-8 text-primary" />
-            <h1 className="text-2xl font-headline font-semibold text-primary">
-              CivicMonitor
-            </h1>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith(item.href)}
-                  tooltip={{ children: item.label }}
-                >
-                  <Link href={item.href}>
+     <AppContext.Provider value={{ issues, setIssues, users, setUsers }}>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center gap-2 p-2">
+              <ShieldAlert className="size-8 text-primary" />
+              <h1 className="text-2xl font-headline font-semibold text-primary">
+                CivicMonitor
+              </h1>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    as={Link}
+                    href={item.href}
+                    isActive={pathname.startsWith(item.href)}
+                    tooltip={{ children: item.label }}
+                  >
                     <item.icon />
                     <span className="truncate">{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                  <SidebarMenuButton as={Link} href="/login" tooltip={{ children: 'Logout' }}>
+                      <LogOut />
+                      <span className="truncate">Logout</span>
+                  </SidebarMenuButton>
               </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={{ children: 'Logout' }}>
-                  <Link href="/login">
-                    <LogOut />
-                    <span className="truncate">Logout</span>
-                  </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <PageHeader title={getPageTitle()}>
-          <UserNav />
-        </PageHeader>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+        <SidebarInset>
+          <PageHeader title={getPageTitle()}>
+            <UserNav />
+          </PageHeader>
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </AppContext.Provider>
   );
 }

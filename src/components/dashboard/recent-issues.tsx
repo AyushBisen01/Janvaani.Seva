@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { issues } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
+import type { Issue } from '@/lib/types';
 
 function FormattedDistanceToNow({ date }: { date: Date }) {
     const [distance, setDistance] = React.useState('');
@@ -15,7 +16,7 @@ function FormattedDistanceToNow({ date }: { date: Date }) {
     return <>{distance}</>;
 }
 
-export function RecentIssues() {
+export function RecentIssues({issues}: {issues: Issue[]}) {
   const recentIssues = issues
     .sort((a, b) => b.reportedAt.getTime() - a.reportedAt.getTime())
     .slice(0, 5);

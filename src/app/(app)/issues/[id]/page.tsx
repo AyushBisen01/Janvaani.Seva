@@ -1,7 +1,7 @@
+
 'use client';
 
 import * as React from 'react';
-import { issues } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -31,6 +31,7 @@ import { IssueMapOverview } from '@/components/dashboard/issue-map-overview';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { IssuePriority, IssueStatus } from '@/lib/types';
+import { AppContext } from '../../layout';
 
 const statusColors: Record<IssueStatus, string> = {
     Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -61,10 +62,25 @@ function FormattedDate({ date, formatStr }: { date: Date | undefined, formatStr:
 
 export default function IssueDetailPage() {
   const params = useParams();
+  const context = React.useContext(AppContext);
+  
+  if (!context) {
+    return null;
+  }
+  
+  const { issues, setIssues } = context;
   const issue = issues.find((i) => i.id === params.id);
 
   if (!issue) {
     notFound();
+  }
+
+  const handleApprove = () => {
+    setIssues(issues.map(i => i.id === issue.id ? {...i, status: 'Approved'} : i));
+  }
+
+  const handleReject = () => {
+    setIssues(issues.map(i => i.id === issue.id ? {...i, status: 'Rejected'} : i));
   }
   
   const issueDetails = [
@@ -97,13 +113,13 @@ export default function IssueDetailPage() {
               </div>
             </div>
              <div className="flex items-center space-x-2 pt-4">
-              <Button size="sm" variant="outline" className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200">
+              <Button size="sm" variant="outline" className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200" onClick={handleApprove} disabled={issue.status !== 'Pending'}>
                 <Check className="mr-2 h-4 w-4" /> Approve
               </Button>
-              <Button size="sm" variant="outline" className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200">
+              <Button size="sm" variant="outline" className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200" onClick={handleReject} disabled={issue.status !== 'Pending'}>
                 <X className="mr-2 h-4 w-4" /> Reject
               </Button>
-              <Button size="sm">
+              <Button size="sm" disabled={issue.status !== 'Approved'}>
                 <User className="mr-2 h-4 w-4" /> Assign
               </Button>
                <Button size="sm" variant="secondary">
@@ -204,7 +220,7 @@ export default function IssueDetailPage() {
           </CardHeader>
           <CardContent>
             <MapProvider>
-              <IssueMapOverview />
+              <IssueMapOverview issues={[issue]} />
             </MapProvider>
           </CardContent>
         </Card>

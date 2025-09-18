@@ -1,4 +1,6 @@
-import { issues } from '@/lib/data';
+
+'use client';
+import * as React from 'react';
 import { IssuesDataTable } from '@/components/issues/data-table';
 import {
   Card,
@@ -17,8 +19,36 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
+import { AppContext } from '../layout';
+import type { IssuePriority, IssueStatus } from '@/lib/types';
+
 
 export default function IssuesPage() {
+  const context = React.useContext(AppContext);
+  const [search, setSearch] = React.useState('');
+  const [status, setStatus] = React.useState('all');
+  const [priority, setPriority] = React.useState('all');
+  
+  if (!context) {
+    return null;
+  }
+
+  const { issues } = context;
+
+  const filteredIssues = issues.filter(issue => {
+    const searchLower = search.toLowerCase();
+    const matchesSearch = search === '' || 
+                          issue.id.toLowerCase().includes(searchLower) || 
+                          issue.location.address.toLowerCase().includes(searchLower) ||
+                          issue.category.toLowerCase().includes(searchLower) ||
+                          issue.description.toLowerCase().includes(searchLower);
+
+    const matchesStatus = status === 'all' || issue.status === status;
+    const matchesPriority = priority === 'all' || issue.priority === priority;
+
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -38,34 +68,41 @@ export default function IssuesPage() {
             </Button>
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-2">
-          <Input placeholder="Search by ID, location..." className="max-w-sm" />
-          <Select>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Input 
+            placeholder="Search by ID, location..." 
+            className="max-w-sm" 
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="assigned">Assigned</SelectItem>
-              <SelectItem value="resolved">Resolved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="Approved">Approved</SelectItem>
+              <SelectItem value="Assigned">Assigned</SelectItem>
+              <SelectItem value="Resolved">Resolved</SelectItem>
+              <SelectItem value="Rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
-          <Select>
+          <Select value={priority} onValueChange={(value) => setPriority(value as IssuePriority | 'all')}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by Priority" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="High">High</SelectItem>
+              <SelectItem value="Medium">Medium</SelectItem>
+              <SelectItem value="Low">Low</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </CardHeader>
       <CardContent>
-        <IssuesDataTable issues={issues} />
+        <IssuesDataTable issues={filteredIssues} />
       </CardContent>
     </Card>
   );

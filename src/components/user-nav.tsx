@@ -1,6 +1,8 @@
 
+
 'use client';
 
+import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,10 +16,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Bell, LogOut, Settings, ShieldAlert, User, LifeBuoy } from 'lucide-react';
 import Link from 'next/link';
-import { issues } from '@/lib/data';
 import { Badge } from './ui/badge';
+import { AppContext } from '@/app/(app)/layout';
 
 export function UserNav() {
+  const context = React.useContext(AppContext);
+  
+  if (!context) {
+    return null;
+  }
+  const { issues } = context;
+
   const pendingIssuesCount = issues.filter(
     (i) => i.status === 'Pending' || i.status === 'Approved'
   ).length;
@@ -85,9 +94,11 @@ export function UserNav() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
+            <DropdownMenuItem asChild>
+              <Link href="/users">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/settings">

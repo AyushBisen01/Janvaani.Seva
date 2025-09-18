@@ -1,3 +1,7 @@
+
+'use client';
+import * as React from 'react';
+
 import { StatCard } from '@/components/dashboard/stat-card';
 import {
   Activity,
@@ -11,9 +15,18 @@ import { RecentIssues } from '@/components/dashboard/recent-issues';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapProvider } from '@/components/map/map-provider';
 import { IssueMapOverview } from '@/components/dashboard/issue-map-overview';
-import { issues } from '@/lib/data';
+import { AppContext } from '../layout';
+
 
 export default function DashboardPage() {
+    const context = React.useContext(AppContext);
+
+    if (!context) {
+        return null;
+    }
+
+    const { issues } = context;
+
   const totalIssues = issues.length;
   const newIssues = issues.filter(
     (i) => i.status === 'Pending' || i.status === 'Approved'
@@ -56,7 +69,7 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <IssuesByCategoryChart />
+            <IssuesByCategoryChart issues={issues} />
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
@@ -64,7 +77,7 @@ export default function DashboardPage() {
             <CardTitle className="font-headline">Recent Issues</CardTitle>
           </CardHeader>
           <CardContent>
-            <RecentIssues />
+            <RecentIssues issues={issues} />
           </CardContent>
         </Card>
       </div>
@@ -75,7 +88,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <MapProvider>
-            <IssueMapOverview />
+            <IssueMapOverview issues={issues}/>
           </MapProvider>
         </CardContent>
       </Card>

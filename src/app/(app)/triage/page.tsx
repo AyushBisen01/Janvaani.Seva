@@ -1,8 +1,8 @@
 
+
 'use client';
 
 import * as React from 'react';
-import { issues } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -28,7 +28,6 @@ import {
   ShieldAlert,
   Send,
   Eye,
-  ListFilter,
   MoreHorizontal,
 } from 'lucide-react';
 import {
@@ -57,20 +56,23 @@ import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import type { Issue, IssuePriority } from '@/lib/types';
 import Image from 'next/image';
+import { AppContext } from '../layout';
+import { useToast } from '@/hooks/use-toast';
 
 function AssignIssueDialog({
-  issue,
+  issues,
   open,
   onOpenChange,
   onAssign,
 }: {
-  issue: Issue | null;
+  issues: Issue[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAssign: (id: string, department: string, priority: IssuePriority) => void;
+  onAssign: (ids: string[], department: string, priority: IssuePriority) => void;
 }) {
   const [department, setDepartment] = React.useState('');
   const [priority, setPriority] = React.useState<IssuePriority | ''>('');
+  const issue = issues[0]; // Use first issue for initial priority
 
   React.useEffect(() => {
     if (issue) {
@@ -79,19 +81,19 @@ function AssignIssueDialog({
   }, [issue]);
 
   const handleAssign = () => {
-    if (issue && department && priority) {
-      onAssign(issue.id, department, priority);
+    if (issues.length > 0 && department && priority) {
+      onAssign(issues.map(i => i.id), department, priority);
       onOpenChange(false);
     }
   };
-
+  
   if (!issue) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign Issue #{issue.id}</DialogTitle>
+          <DialogTitle>Assign Issue{issues.length > 1 ? `s (${issues.length})` : ` #${issue.id}`}</DialogTitle>
           <DialogDescription>
             Forward this issue to the correct department and set a priority.
           </DialogDescription>
@@ -134,7 +136,7 @@ function AssignIssueDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleAssign}>Approve & Assign</Button>
+          <Button onClick={handleAssign} disabled={!department || !priority}>Approve & Assign</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -143,12 +145,16 @@ function AssignIssueDialog({
 
 function TriageDataTable({
   issues,
+  selectedIssues,
+  onSelectedChange,
   onApprove,
   onReject,
   onAssign,
   onView,
 }: {
   issues: Issue[];
+  selectedIssues: string[];
+  onSelectedChange: (id: string, checked: boolean) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onAssign: (issue: Issue) => void;
@@ -160,7 +166,12 @@ function TriageDataTable({
         <TableHeader>
           <TableRow>
             <TableHead className="w-10">
-              <Checkbox />
+              <Checkbox 
+                checked={selectedIssues.length === issues.length && issues.length > 0}
+                onCheckedChange={(checked) => {
+                  issues.forEach(issue => onSelectedChange(issue.id, !!checked))
+                }}
+              />
             </TableHead>
             <TableHead>Issue Details</TableHead>
             <TableHead className="hidden md:table-cell">Image</TableHead>
@@ -171,9 +182,12 @@ function TriageDataTable({
         </TableHeader>
         <TableBody>
           {issues.map((issue) => (
-            <TableRow key={issue.id}>
+            <TableRow key={issue.id} data-state={selectedIssues.includes(issue.id) ? 'selected' : ''}>
               <TableCell>
-                <Checkbox />
+                <Checkbox 
+                  checked={selectedIssues.includes(issue.id)}
+                  onCheckedChange={(checked) => onSelectedChange(issue.id, !!checked)}
+                />
               </TableCell>
               <TableCell>
                 <div className="font-medium">{issue.category}</div>
@@ -235,9 +249,17 @@ function TriageDataTable({
 
 export default function TriagePage() {
   const router = useRouter();
-  const [allIssues, setAllIssues] = React.useState<Issue[]>(issues);
-  const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
+  const { toast } = useToast();
+  const context = React.useContext(AppContext);
+  const [assignQueue, setAssignQueue] = React.useState<Issue[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = React.useState(false);
+  const [selectedIssues, setSelectedIssues] = React.useState<string[]>([]);
+  const [activeTab, setActiveTab] = React.useState('pending');
+
+  if (!context) {
+    return null;
+  }
+  const { issues: allIssues, setIssues: setAllIssues } = context;
 
   const pendingIssues = allIssues.filter((i) => i.status === 'Pending');
   const approvedIssues = allIssues.filter((i) => i.status === 'Approved');
@@ -246,36 +268,63 @@ export default function TriagePage() {
     setAllIssues((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status: 'Approved' } : i))
     );
+    toast({ title: "Issue Approved", description: `Issue #${id} has been moved to the auto-approved list.`});
   };
 
   const handleReject = (id: string) => {
     setAllIssues((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status: 'Rejected' } : i))
     );
+     toast({ title: "Issue Rejected", description: `Issue #${id} has been rejected.`});
   };
 
-  const handleOpenAssignDialog = (issue: Issue) => {
-    setSelectedIssue(issue);
+  const handleOpenAssignDialog = (issuesToAssign: Issue | Issue[]) => {
+    const queue = Array.isArray(issuesToAssign) ? issuesToAssign : [issuesToAssign];
+    if (queue.length === 0) {
+      toast({ variant: 'destructive', title: "No issues selected", description: "Please select issues to assign."});
+      return;
+    }
+    setAssignQueue(queue);
     setIsAssignDialogOpen(true);
   };
 
   const handleAssign = (
-    id: string,
+    ids: string[],
     department: string,
     priority: IssuePriority
   ) => {
     setAllIssues((prev) =>
       prev.map((i) =>
-        i.id === id
-          ? { ...i, status: 'Assigned', assignedTo: department, priority }
+        ids.includes(i.id)
+          ? { ...i, status: 'Assigned', assignedTo: department, priority, statusHistory: [...(i.statusHistory || []), {status: 'Assigned', date: new Date()}] }
           : i
       )
     );
+    toast({ title: "Issues Assigned", description: `${ids.length} issue(s) have been assigned to ${department}.`});
+    setSelectedIssues([]);
   };
 
   const handleView = (id: string) => {
     router.push(`/issues/${id}`);
   };
+
+  const handleSelectedChange = (id: string, checked: boolean) => {
+    setSelectedIssues(prev => {
+      if (checked) {
+        return [...prev, id];
+      } else {
+        return prev.filter(issueId => issueId !== id);
+      }
+    });
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSelectedIssues([]);
+  }
+
+  const currentIssues = activeTab === 'pending' ? pendingIssues : approvedIssues;
+  const issuesForBulkAssign = allIssues.filter(i => selectedIssues.includes(i.id));
 
   return (
     <>
@@ -290,7 +339,7 @@ export default function TriagePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="pending">
+          <Tabs defaultValue="pending" onValueChange={handleTabChange} value={activeTab}>
             <div className="flex justify-between items-center mb-4">
               <TabsList>
                 <TabsTrigger value="pending">
@@ -301,14 +350,16 @@ export default function TriagePage() {
                 </TabsTrigger>
               </TabsList>
               <div className="flex items-center gap-2">
-                <Button variant="outline">
-                  <Send className="mr-2 h-4 w-4" /> Bulk Assign
+                <Button variant="outline" onClick={() => handleOpenAssignDialog(issuesForBulkAssign)} disabled={selectedIssues.length === 0}>
+                  <Send className="mr-2 h-4 w-4" /> Bulk Assign ({selectedIssues.length})
                 </Button>
               </div>
             </div>
             <TabsContent value="pending" className="mt-0">
               <TriageDataTable
                 issues={pendingIssues}
+                selectedIssues={selectedIssues}
+                onSelectedChange={handleSelectedChange}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onAssign={handleOpenAssignDialog}
@@ -318,6 +369,8 @@ export default function TriagePage() {
             <TabsContent value="approved" className="mt-0">
               <TriageDataTable
                 issues={approvedIssues}
+                selectedIssues={selectedIssues}
+                onSelectedChange={handleSelectedChange}
                 onApprove={handleApprove}
                 onReject={handleReject}
                 onAssign={handleOpenAssignDialog}
@@ -328,7 +381,7 @@ export default function TriagePage() {
         </CardContent>
       </Card>
       <AssignIssueDialog
-        issue={selectedIssue}
+        issues={assignQueue}
         open={isAssignDialogOpen}
         onOpenChange={setIsAssignDialogOpen}
         onAssign={handleAssign}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -8,19 +9,19 @@ import {
   YAxis,
   Tooltip,
 } from 'recharts';
-import { issues } from '@/lib/data';
+import type { Issue } from '@/lib/types';
 
-const getCategoryCounts = () => {
-  const counts: { [key: string]: number } = {};
-  issues.forEach((issue) => {
-    counts[issue.category] = (counts[issue.category] || 0) + 1;
-  });
-  return Object.entries(counts).map(([name, total]) => ({ name, total }));
-};
 
-const data = getCategoryCounts();
+export function IssuesByCategoryChart({issues}: {issues: Issue[]}) {
 
-export function IssuesByCategoryChart() {
+  const data = React.useMemo(() => {
+    const counts: { [key: string]: number } = {};
+    issues.forEach((issue) => {
+      counts[issue.category] = (counts[issue.category] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, total]) => ({ name, total }));
+  }, [issues]);
+
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={data}>
