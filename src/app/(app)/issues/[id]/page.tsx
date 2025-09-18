@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { issues } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   Card,
@@ -59,7 +59,8 @@ function FormattedDate({ date, formatStr }: { date: Date | undefined, formatStr:
 }
 
 
-export default function IssueDetailPage({ params }: { params: { id: string } }) {
+export default function IssueDetailPage() {
+  const params = useParams();
   const issue = issues.find((i) => i.id === params.id);
 
   if (!issue) {
