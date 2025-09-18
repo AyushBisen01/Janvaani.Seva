@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "pothole-1",
+      "description": "A large pothole on a residential street.",
+      "imageUrl": "https://picsum.photos/seed/pothole1/800/600",
+      "imageHint": "pothole road"
+    },
+    {
+      "id": "garbage-1",
+      "description": "An overflowing public garbage bin.",
+      "imageUrl": "https://picsum.photos/seed/garbage1/800/600",
+      "imageHint": "garbage overflow"
+    },
+    {
+      "id": "streetlight-1",
+      "description": "A malfunctioning streetlight at an intersection.",
+      "imageUrl": "https://picsum.photos/seed/light1/800/600",
+      "imageHint": "street light"
+    },
+    {
+      "id": "water-leak-1",
+      "description": "Water leaking from a pipe on the sidewalk.",
+      "imageUrl": "https://picsum.photos/seed/water1/800/600",
+      "imageHint": "water leak"
+    },
+    {
+      "id": "work-proof-1",
+      "description": "A newly repaired pothole.",
+      "imageUrl": "https://picsum.photos/seed/proof1/800/600",
+      "imageHint": "road repaired"
+    }
+  ]
 }
