@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Map, HeatmapLayer } from '@vis.gl/react-google-maps';
+import { Map } from '@vis.gl/react-google-maps';
 import { issues } from '@/lib/data';
+import { HeatmapLayer } from '../map/heatmap-layer';
 
 export function IssueMapOverview() {
   const heatmapData = useMemo(() => {
