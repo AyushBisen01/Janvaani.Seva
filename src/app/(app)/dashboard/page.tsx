@@ -16,6 +16,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapProvider } from '@/components/map/map-provider';
 import { IssueMapOverview } from '@/components/dashboard/issue-map-overview';
 import { AppContext } from '../layout';
+import { IssuesByStatusChart } from '@/components/dashboard/issues-by-status-chart';
+import { IssuesByPriorityChart } from '@/components/dashboard/issues-by-priority-chart';
+import { IssuesOverTimeChart } from '@/components/dashboard/issues-over-time-chart';
 
 
 export default function DashboardPage() {
@@ -59,17 +62,59 @@ export default function DashboardPage() {
           icon={Clock}
         />
       </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2">
+                  <Activity />
+                  Issues Over Time
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <IssuesOverTimeChart issues={issues} />
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Issues by Priority</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <IssuesByPriorityChart issues={issues} />
+            </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
-              <Activity />
               Issues by Category
             </CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <IssuesByCategoryChart issues={issues} />
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="font-headline">Issues by Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <IssuesByStatusChart issues={issues} />
+          </CardContent>
+        </Card>
+      </div>
+      
+       <div className="grid gap-6 lg:grid-cols-5">
+         <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="font-headline">Issue Hotspots</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MapProvider>
+              <IssueMapOverview issues={issues}/>
+            </MapProvider>
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
@@ -82,16 +127,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">Issue Hotspots</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MapProvider>
-            <IssueMapOverview issues={issues}/>
-          </MapProvider>
-        </CardContent>
-      </Card>
     </div>
   );
 }
