@@ -20,12 +20,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, UserX, KeyRound, ShieldQuestion } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -39,7 +40,7 @@ export default function UsersPage() {
               User Management
             </CardTitle>
             <CardDescription>
-              Manage administrator and staff accounts.
+              Manage administrator, staff and citizen accounts.
             </CardDescription>
           </div>
           <Button>
@@ -55,7 +56,8 @@ export default function UsersPage() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="hidden md:table-cell">Department</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -80,7 +82,10 @@ export default function UsersPage() {
                   <TableCell>
                     <Badge variant="outline">{user.role}</Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {user.department || 'N/A'}
+                  </TableCell>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -94,8 +99,22 @@ export default function UsersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>View Profile</DropdownMenuItem>
                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Delete</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                            <KeyRound className="mr-2 h-4 w-4" />
+                            Reset Password
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                            <ShieldQuestion className="mr-2 h-4 w-4" />
+                            Change Role
+                        </DropdownMenuItem>
+                         <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-red-600">
+                            <UserX className="mr-2 h-4 w-4" />
+                            Deactivate Account
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

@@ -1,3 +1,4 @@
+
 import type { Issue, User } from './types';
 
 export const users: User[] = [
@@ -14,6 +15,7 @@ export const users: User[] = [
     email: 'sanitation.head@civic.gov',
     role: 'Department Head',
     avatarUrl: 'https://i.pravatar.cc/150?u=sanitation.head@civic.gov',
+    department: 'Sanitation Dept.'
   },
   {
     id: 'user-3',
@@ -21,6 +23,7 @@ export const users: User[] = [
     email: 'pwd.staff@civic.gov',
     role: 'Staff',
     avatarUrl: 'https://i.pravatar.cc/150?u=pwd.staff@civic.gov',
+    department: 'Public Works Dept.'
   },
 ];
 

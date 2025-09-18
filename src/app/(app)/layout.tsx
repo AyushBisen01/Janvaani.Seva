@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -29,7 +30,7 @@ import { PageHeader } from '@/components/page-header';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/triage', icon: ShieldAlert, label: 'Triage' },
+  { href: '/triage', icon: ShieldAlert, label: 'Issue Approval' },
   { href: '/issues', icon: ListChecks, label: 'All Issues' },
   { href: '/map', icon: Map, label: 'Map View' },
   { href: '/reports', icon: BarChart2, label: 'Reports' },
@@ -39,7 +40,7 @@ const navItems = [
 
 const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard Overview',
-  '/triage': 'Issue Triage',
+  '/triage': 'Issue Approval Hub',
   '/issues': 'All Issues',
   '/map': 'Interactive Map',
   '/reports': 'Analytics & Reports',
@@ -108,4 +109,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-

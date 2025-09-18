@@ -12,14 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Bell, CreditCard, LogOut, Settings, ShieldAlert, User } from 'lucide-react';
+import { Bell, LogOut, Settings, ShieldAlert, User, LifeBuoy } from 'lucide-react';
 import Link from 'next/link';
 import { issues } from '@/lib/data';
 import { Badge } from './ui/badge';
 
 export function UserNav() {
   const pendingIssuesCount = issues.filter(
-    (i) => i.status === 'Pending'
+    (i) => i.status === 'Pending' || i.status === 'Approved'
   ).length;
 
   return (
@@ -41,11 +41,11 @@ export function UserNav() {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-80" align="end">
           <DropdownMenuLabel>
-            <p className="font-semibold">Pending Issues</p>
+            <p className="font-semibold">Notifications</p>
             <p className="text-xs font-normal text-muted-foreground">
               {pendingIssuesCount > 0
-                ? 'There are issues waiting for your approval.'
-                : 'No issues require your attention.'}
+                ? `You have ${pendingIssuesCount} issues needing attention.`
+                : 'No new notifications.'}
             </p>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -54,7 +54,7 @@ export function UserNav() {
               <DropdownMenuItem asChild>
                 <Link href="/triage">
                   <ShieldAlert className="mr-2 h-4 w-4" />
-                  <span>Go to Triage Center</span>
+                  <span>Go to Issue Approval Hub</span>
                 </Link>
               </DropdownMenuItem>
             </>
@@ -89,15 +89,15 @@ export function UserNav() {
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <CreditCard className="mr-2 h-4 w-4" />
-              <span>Billing</span>
-            </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/settings">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </Link>
+            </DropdownMenuItem>
+             <DropdownMenuItem>
+              <LifeBuoy className="mr-2 h-4 w-4" />
+              <span>Support</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />

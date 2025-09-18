@@ -1,3 +1,4 @@
+
 export type IssueStatus = "Pending" | "Approved" | "Assigned" | "Resolved" | "Rejected";
 export type IssuePriority = "High" | "Medium" | "Low";
 
@@ -31,6 +32,7 @@ export interface User {
   email: string;
   role: "Super Admin" | "Department Head" | "Staff";
   avatarUrl: string;
+  department?: string;
 }
 
 export interface Department {
