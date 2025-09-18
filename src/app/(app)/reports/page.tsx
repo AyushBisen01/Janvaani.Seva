@@ -145,4 +145,10 @@ export default function ReportsPage() {
             <CardTitle className="font-headline">Issue Resolution Funnel</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResolutionFunnelChart issues
+            <ResolutionFunnelChart issues={issues} />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

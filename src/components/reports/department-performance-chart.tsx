@@ -62,3 +62,4 @@ export function DepartmentPerformanceChart({ issues }: { issues: Issue[] }) {
       </ResponsiveContainer>
     </div>
   );
+}
