@@ -1,3 +1,6 @@
+'use client';
+
+import * as React from 'react';
 import { issues } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -43,6 +46,18 @@ const priorityColors: Record<IssuePriority, string> = {
     Low: 'bg-gray-100 text-gray-800 border-gray-200',
 };
 
+function FormattedDate({ date, formatStr }: { date: Date | undefined, formatStr: string }) {
+  const [formattedDate, setFormattedDate] = React.useState('');
+
+  React.useEffect(() => {
+    if (date) {
+      setFormattedDate(format(date, formatStr));
+    }
+  }, [date, formatStr]);
+
+  return <>{formattedDate}</>;
+}
+
 
 export default function IssueDetailPage({ params }: { params: { id: string } }) {
   const issue = issues.find((i) => i.id === params.id);
@@ -54,7 +69,7 @@ export default function IssueDetailPage({ params }: { params: { id: string } }) 
   const issueDetails = [
     { icon: Layers, label: 'Category', value: issue.category },
     { icon: MapPin, label: 'Location', value: issue.location.address },
-    { icon: Calendar, label: 'Reported On', value: format(issue.reportedAt, 'PPP p') },
+    { icon: Calendar, label: 'Reported On', value: <FormattedDate date={issue.reportedAt} formatStr="PPP p" /> },
     { icon: HardHat, label: 'Assigned To', value: issue.assignedTo || "N/A" },
     { icon: User, label: 'Citizen', value: `${issue.citizen.name} (${issue.citizen.contact})` },
   ];
@@ -127,7 +142,7 @@ export default function IssueDetailPage({ params }: { params: { id: string } }) 
                             <p className="text-sm">
                                 <span className="font-semibold">{issue.citizen.name}</span> reported the issue.
                             </p>
-                            <p className="text-xs text-muted-foreground">{format(issue.reportedAt, 'PPP p')}</p>
+                            <p className="text-xs text-muted-foreground"><FormattedDate date={issue.reportedAt} formatStr="PPP p" /></p>
                         </div>
                     </li>
                      <li className="flex gap-4">
@@ -140,7 +155,7 @@ export default function IssueDetailPage({ params }: { params: { id: string } }) 
                             <p className="text-sm">
                                 <span className="font-semibold">AI System</span> automatically approved and categorized the issue.
                             </p>
-                            <p className="text-xs text-muted-foreground">{format(new Date(issue.reportedAt.getTime() + 5 * 60000), 'PPP p')}</p>
+                            <p className="text-xs text-muted-foreground"><FormattedDate date={new Date(issue.reportedAt.getTime() + 5 * 60000)} formatStr="PPP p" /></p>
                         </div>
                     </li>
                 </ul>
@@ -178,7 +193,7 @@ export default function IssueDetailPage({ params }: { params: { id: string } }) 
                 className="rounded-lg object-cover"
                 data-ai-hint={issue.proofHint}
               />
-              <p className="text-sm text-muted-foreground mt-2">Work completed on {issue.resolvedAt ? format(issue.resolvedAt, 'PPP') : ''}</p>
+              <p className="text-sm text-muted-foreground mt-2">Work completed on <FormattedDate date={issue.resolvedAt} formatStr="PPP" /></p>
             </CardContent>
           </Card>
         )}

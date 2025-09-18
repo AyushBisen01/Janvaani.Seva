@@ -1,6 +1,19 @@
+'use client';
+
+import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { issues } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
+
+function FormattedDistanceToNow({ date }: { date: Date }) {
+    const [distance, setDistance] = React.useState('');
+
+    React.useEffect(() => {
+        setDistance(formatDistanceToNow(date, { addSuffix: true }));
+    }, [date]);
+
+    return <>{distance}</>;
+}
 
 export function RecentIssues() {
   const recentIssues = issues
@@ -29,7 +42,7 @@ export function RecentIssues() {
             </p>
           </div>
           <div className="ml-auto text-sm text-muted-foreground">
-            {formatDistanceToNow(issue.reportedAt, { addSuffix: true })}
+            <FormattedDistanceToNow date={issue.reportedAt} />
           </div>
         </div>
       ))}
