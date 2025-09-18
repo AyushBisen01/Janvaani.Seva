@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import type { Issue, IssuePriority, IssueStatus } from '@/lib/types';
-import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { FormattedDate } from '../formatted-date';
 
 interface IssuesDataTableProps {
   issues: Issue[];
@@ -32,18 +32,6 @@ const priorityColors: Record<IssuePriority, string> = {
   Medium: 'bg-orange-100 text-orange-800 border-orange-200',
   Low: 'bg-gray-100 text-gray-800 border-gray-200',
 };
-
-function FormattedDate({ date }: { date: Date | undefined }) {
-  const [formattedDate, setFormattedDate] = React.useState('');
-
-  React.useEffect(() => {
-    if (date) {
-      setFormattedDate(format(date, 'PPP'));
-    }
-  }, [date]);
-
-  return <>{formattedDate}</>;
-}
 
 export function IssuesDataTable({ issues }: IssuesDataTableProps) {
   const router = useRouter();
