@@ -10,6 +10,18 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-iso-8859-1' encoding. The file will be saved using 'utf-8' encoding.
-
-> Run `npm install` to build, or `npm run dev` to start a local development server.
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
