@@ -131,6 +131,13 @@ export default function IssueDetailPage() {
     });
     toast({ title: "Issue Assigned", description: `Issue #${issue.id} has been assigned to ${department}.`});
   };
+
+  const handleNotifyCitizen = () => {
+    toast({
+      title: 'Citizen Notified',
+      description: `A notification has been sent to ${issue.citizen.name}.`,
+    });
+  };
   
   const issueDetails = [
     { icon: Layers, label: 'Category', value: issue.category },
@@ -172,7 +179,7 @@ export default function IssueDetailPage() {
                 <Button size="sm" disabled={issue.status !== 'Approved'} onClick={() => setIsAssignDialogOpen(true)}>
                   <User className="mr-2 h-4 w-4" /> Assign
                 </Button>
-                <Button size="sm" variant="secondary">
+                <Button size="sm" variant="secondary" onClick={handleNotifyCitizen}>
                   <MessageSquare className="mr-2 h-4 w-4" /> Notify Citizen
                 </Button>
               </div>
