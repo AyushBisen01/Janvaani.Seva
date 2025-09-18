@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,12 +20,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { FileDown, BarChart2, FileSpreadsheet, FileText } from 'lucide-react';
+import { FileSpreadsheet, FileText } from 'lucide-react';
+import { AppContext } from '../layout';
+import { DepartmentPerformanceChart } from '@/components/reports/department-performance-chart';
+import { ResolutionFunnelChart } from '@/components/reports/resolution-funnel-chart';
 
 export default function ReportsPage() {
+  const context = React.useContext(AppContext);
+
+  if (!context) {
+    return null;
+  }
+  const { issues, users } = context;
+
   return (
     <div className="space-y-8">
-       <div>
+      <div>
         <h1 className="text-3xl font-headline font-bold tracking-tight">
           Reports & Analytics
         </h1>
@@ -42,88 +53,96 @@ export default function ReportsPage() {
         </CardHeader>
         <CardContent className="grid gap-6">
           <div className="grid md:grid-cols-2 gap-4">
-             <div className="grid gap-2">
-                <Label htmlFor="start-date">Start Date</Label>
-                <DatePicker id="start-date" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="end-date">End Date</Label>
-                <DatePicker id="end-date" />
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="start-date">Start Date</Label>
+              <DatePicker id="start-date" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="end-date">End Date</Label>
+              <DatePicker id="end-date" />
+            </div>
           </div>
-           <div className="grid md:grid-cols-3 gap-4">
-               <div className="grid gap-2">
-                <Label htmlFor="report-type">Status</Label>
-                <Select defaultValue="all">
-                  <SelectTrigger id="report-type">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="assigned">Assigned</SelectItem>
-                    <SelectItem value="resolved">Resolved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select>
-                  <SelectTrigger id="priority">
-                    <SelectValue placeholder="Filter by priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priorities</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-               <div className="grid gap-2">
-                <Label htmlFor="department">Department</Label>
-                <Select>
-                  <SelectTrigger id="department">
-                    <SelectValue placeholder="Filter by department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                     <SelectItem value="all">All Departments</SelectItem>
-                    <SelectItem value="sanitation">Sanitation</SelectItem>
-                    <SelectItem value="pwd">Public Works</SelectItem>
-                    <SelectItem value="water">Water Dept.</SelectItem>
-                    <SelectItem value="electricity">Electricity</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-           </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="report-type">Status</Label>
+              <Select defaultValue="all">
+                <SelectTrigger id="report-type">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="assigned">Assigned</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select>
+                <SelectTrigger id="priority">
+                  <SelectValue placeholder="Filter by priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="department">Department</Label>
+              <Select>
+                <SelectTrigger id="department">
+                  <SelectValue placeholder="Filter by department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  <SelectItem value="Sanitation Dept.">Sanitation</SelectItem>
+                  <SelectItem value="Public Works Dept.">Public Works</SelectItem>
+                  <SelectItem value="Water Dept.">Water Dept.</SelectItem>
+                  <SelectItem value="Electricity Dept.">
+                    Electricity
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
-        <CardFooter className='gap-2'>
+        <CardFooter className="gap-2">
           <Button>
             <FileSpreadsheet className="mr-2 h-4 w-4" /> Export as CSV
           </Button>
-           <Button variant="outline">
+          <Button variant="outline">
             <FileText className="mr-2 h-4 w-4" /> Export as PDF
           </Button>
         </CardFooter>
       </Card>
-      
-       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="flex flex-col items-center justify-center text-center p-6">
-             <div className="mx-auto bg-muted rounded-full p-4 w-fit mb-4">
-                <BarChart2 className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <CardTitle className="font-headline text-xl">
-              Advanced Analytics
-            </CardTitle>
-             <CardContent className="p-0 mt-2">
-                <p className="text-muted-foreground text-sm">
-                  Trend analysis and department performance dashboards are coming soon.
-                </p>
-            </CardContent>
-          </Card>
-        </div>
-    </div>
-  );
-}
+
+      <div>
+         <h2 className="text-2xl font-headline font-bold tracking-tight">
+          Advanced Analytics
+        </h2>
+        <p className="text-muted-foreground">
+          Deep dive into department performance and issue resolution trends.
+        </p>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="font-headline">Department Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DepartmentPerformanceChart issues={issues} />
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="font-headline">Issue Resolution Funnel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResolutionFunnelChart issues
