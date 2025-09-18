@@ -72,13 +72,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  href={item.href}
                   isActive={pathname.startsWith(item.href)}
                   tooltip={{ children: item.label }}
                 >
                   <Link href={item.href}>
                     <item.icon />
-                    <span>{item.label}</span>
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -88,10 +87,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton asChild href="/login" tooltip={{ children: 'Logout' }}>
+                <SidebarMenuButton asChild tooltip={{ children: 'Logout' }}>
                   <Link href="/login">
                     <LogOut />
-                    <span>Logout</span>
+                    <span className="truncate">Logout</span>
                   </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
