@@ -8,6 +8,7 @@ import { ShieldAlert, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '../ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+import { ScrollArea } from '../ui/scroll-area';
 
 function FormattedDistanceToNow({ date }: { date: Date | string }) {
     const [distance, setDistance] = React.useState('');
@@ -31,37 +32,37 @@ export function CriticalIssues({ issues }: { issues: Issue[] }) {
   }
 
   return (
-    <Alert variant="destructive" className="bg-accent/20 border-accent text-accent-foreground">
+    <Alert variant="destructive">
       <ShieldAlert className="h-4 w-4" />
       <AlertTitle className="font-headline font-bold">Critical Issues Requiring Attention ({criticalIssues.length})</AlertTitle>
       <AlertDescription>
-        <div className="mt-2 space-y-3">
-          {criticalIssues.slice(0, 3).map((issue) => (
-            <div key={issue.id} className="flex justify-between items-center text-sm">
+        <ScrollArea className="mt-2 space-y-3 h-40">
+          {criticalIssues.map((issue) => (
+            <div key={issue.id} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-destructive/10">
               <div className="flex flex-col">
                 <Link href={`/issues/${issue.id}`} className="font-semibold hover:underline">
                   {issue.category}: {issue.location.address}
                 </Link>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-destructive/80 dark:text-destructive-foreground/80">
                   Reported <FormattedDistanceToNow date={issue.reportedAt} />
                 </p>
               </div>
                <div className="flex items-center gap-2">
-                 <Badge variant="outline">{issue.status}</Badge>
+                 <Badge variant="outline" className="border-destructive/50 text-destructive">{issue.status}</Badge>
                  <Link href={`/issues/${issue.id}`} title="View Issue">
                     <ExternalLink className="h-4 w-4" />
                 </Link>
                </div>
             </div>
           ))}
-          {criticalIssues.length > 3 && (
-             <div className="text-center mt-2">
+        </ScrollArea>
+        {criticalIssues.length > 3 && (
+             <div className="text-center mt-2 border-t border-destructive/20 pt-2">
                 <Link href="/issues?priority=High" className="text-sm font-semibold hover:underline">
                     View all {criticalIssues.length} critical issues...
                 </Link>
             </div>
-          )}
-        </div>
+        )}
       </AlertDescription>
     </Alert>
   );
