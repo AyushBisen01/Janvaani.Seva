@@ -1,13 +1,17 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { Map, Circle } from '@vis.gl/react-google-maps';
+import { useMemo, useEffect, useState } from 'react';
+import { Map, useMap } from '@vis.gl/react-google-maps';
 import type { Issue } from '@/lib/types';
 
 // Helper to group issues that are close to each other
 function clusterIssues(issues: Issue[], distance: number) {
   const clusters: { lat: number; lng: number; count: number; issues: Issue[] }[] = [];
+
+  if (typeof window === 'undefined' || !window.google?.maps?.geometry) {
+    return clusters;
+  }
 
   issues.forEach(issue => {
     let found = false;
@@ -33,11 +37,39 @@ function clusterIssues(issues: Issue[], distance: number) {
   return clusters;
 }
 
+// A custom Circle component that uses the Google Maps API directly
+function Circle(props: google.maps.CircleOptions) {
+  const map = useMap();
+  const [circle, setCircle] = useState<google.maps.Circle | null>(null);
+
+  useEffect(() => {
+    if (!map) return;
+    if (!circle) {
+      setCircle(new google.maps.Circle(props));
+    }
+
+    return () => {
+      if (circle) {
+        circle.setMap(null);
+      }
+    };
+  }, [map, circle, props]);
+
+  useEffect(() => {
+    if (circle) {
+      circle.setOptions(props);
+      circle.setMap(map);
+    }
+  }, [circle, props, map]);
+
+  return null;
+}
+
 
 export function IssueMapOverview({issues}: {issues: Issue[]}) {
 
   const issueClusters = useMemo(() => {
-     if (typeof window === 'undefined' || !window.google?.maps?.geometry) {
+    if (typeof window === 'undefined' || !window.google?.maps?.geometry) {
       return [];
     }
     // Cluster issues within a 5km radius
@@ -88,4 +120,5 @@ export function IssueMapOverview({issues}: {issues: Issue[]}) {
     </div>
   );
 }
+
 
