@@ -95,8 +95,8 @@ export function InteractiveMap({issues}: {issues: Issue[]}) {
                 </Card>
             </div>
             <Map
-                defaultCenter={{ lat: 34.0522, lng: -118.2437 }}
-                defaultZoom={12}
+                defaultCenter={{ lat: 19.7515, lng: 75.7139 }} // Centered on Maharashtra, India
+                defaultZoom={7}
                 gestureHandling={'greedy'}
                 disableDefaultUI={true}
                 mapId={'a2a2153c3143f605'}
