@@ -21,6 +21,7 @@ import { IssuesByPriorityChart } from '@/components/dashboard/issues-by-priority
 import { IssuesOverTimeChart } from '@/components/dashboard/issues-over-time-chart';
 import type { Issue } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CriticalIssues } from '@/components/dashboard/critical-issues';
 
 
 export default function DashboardPage() {
@@ -51,6 +52,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <CriticalIssues issues={issues} />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Issues"

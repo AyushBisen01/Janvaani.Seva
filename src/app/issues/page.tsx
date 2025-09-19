@@ -2,6 +2,7 @@
 'use client';
 import * as React from 'react';
 import useSWR from 'swr';
+import { useSearchParams } from 'next/navigation';
 import { IssuesDataTable } from '@/components/issues/data-table';
 import {
   Card,
@@ -25,11 +26,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function IssuesPage() {
+  const searchParams = useSearchParams();
   const { data: issues, isLoading } = useSWR<Issue[]>('/api/issues');
-  const [search, setSearch] = React.useState('');
-  const [status, setStatus] = React.useState('all');
-  const [priority, setPriority] = React.useState('all');
   
+  const [search, setSearch] = React.useState('');
+  const [status, setStatus] = React.useState(searchParams.get('status') || 'all');
+  const [priority, setPriority] = React.useState(searchParams.get('priority') || 'all');
+  
+  React.useEffect(() => {
+    if (searchParams.has('priority')) {
+      setPriority(searchParams.get('priority') || 'all');
+    }
+     if (searchParams.has('status')) {
+      setStatus(searchParams.get('status') || 'all');
+    }
+  }, [searchParams]);
+
   if (isLoading || !issues) {
     return (
         <Card>

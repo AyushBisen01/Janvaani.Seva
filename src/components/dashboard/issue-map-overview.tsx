@@ -18,7 +18,9 @@ export function IssueMapOverview({issues}: {issues: Issue[]}) {
 
   const center = useMemo(() => {
     if (issues.length === 0) {
-      return { lat: 19.7515, lng: 75.7139 }; // Centered on Maharashtra, India
+      return { lat: 21.1463
+        , lng: 79.0849
+      }; // Centered on Maharashtra, India
     }
     const { lat, lng } = issues.reduce(
       (acc, issue) => {
