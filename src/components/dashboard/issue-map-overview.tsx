@@ -9,10 +9,6 @@ import type { Issue } from '@/lib/types';
 function clusterIssues(issues: Issue[], distance: number) {
   const clusters: { lat: number; lng: number; count: number; issues: Issue[] }[] = [];
 
-  if (typeof window === 'undefined' || !window.google?.maps?.geometry) {
-    return clusters;
-  }
-
   issues.forEach(issue => {
     let found = false;
     for (const cluster of clusters) {
@@ -69,6 +65,7 @@ function Circle(props: google.maps.CircleOptions) {
 export function IssueMapOverview({issues}: {issues: Issue[]}) {
 
   const issueClusters = useMemo(() => {
+    // Ensure the geometry library is loaded before clustering
     if (typeof window === 'undefined' || !window.google?.maps?.geometry) {
       return [];
     }
@@ -120,5 +117,3 @@ export function IssueMapOverview({issues}: {issues: Issue[]}) {
     </div>
   );
 }
-
-
