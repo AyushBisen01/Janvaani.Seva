@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-     <SWRConfig value={{ fetcher }}>
+     <SWRConfig value={{ fetcher, refreshInterval: 2000 }}>
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
