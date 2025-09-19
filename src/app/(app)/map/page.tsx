@@ -9,6 +9,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+
+const legendStatusColors: Record<IssueStatus, string> = {
+    Pending: 'bg-yellow-500',
+    Approved: 'bg-blue-500',
+    Assigned: 'bg-indigo-500',
+    Resolved: 'bg-green-500',
+    Rejected: 'bg-red-500',
+};
 
 export default function MapPage() {
     const { data: issues, isLoading } = useSWR<Issue[]>('/api/issues');
@@ -43,7 +53,7 @@ export default function MapPage() {
     if (isLoading || !issues) {
         return (
             <div className="flex flex-col gap-4 h-full">
-                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-32 w-full" />
                 <Skeleton className="flex-1 w-full" />
             </div>
         )
@@ -97,6 +107,18 @@ export default function MapPage() {
                             <SelectItem value="Low">Low</SelectItem>
                         </SelectContent>
                     </Select>
+                </div>
+                 <Separator className="my-4" />
+                <div className="flex items-center gap-6 text-sm">
+                    <p className="font-semibold">Legend:</p>
+                    <div className="flex flex-wrap items-center gap-4">
+                        {Object.entries(legendStatusColors).map(([status, colorClass]) => (
+                            <div key={status} className="flex items-center gap-2">
+                                <span className={cn("h-3 w-3 rounded-full", colorClass)}></span>
+                                <span>{status}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
             <div className="flex-1">
