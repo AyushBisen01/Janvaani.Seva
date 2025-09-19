@@ -67,5 +67,3 @@ The application consists of two main parts: the Next.js frontend and the Genkit 
     This will start the Genkit development UI, which you can use to inspect and test your AI flows.
 
 Now you can open your browser and navigate to `http://localhost:9002` to see the application in action.
-# Janvaani_Seva
-# Janvaani_Seva
