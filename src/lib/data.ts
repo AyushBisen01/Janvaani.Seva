@@ -29,7 +29,7 @@ export async function getIssues(): Promise<Issue[]> {
       }
       
       let status = capitalize(issue.status || 'pending');
-      if (status === 'In Progress') {
+      if (status === 'Inprogress') { // Match "inProgress" from DB
         status = 'Assigned';
       }
 
@@ -112,21 +112,27 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
             return;
         }
         
-        const updateOp: any = { $set: {} };
+        const updateOp: any = {};
+        const setOnInsert: any = {};
 
         if (updates.status) {
-            let newStatus = updates.status;
-            // Map "Assigned" from dashboard to "In Progress" for the database
+            let newStatus = updates.status as string;
+            // Map "Assigned" from dashboard to "inProgress" for the database
             if (newStatus === 'Assigned') {
-                newStatus = 'In Progress';
+                newStatus = 'inProgress';
             }
             
             // Only update if status is different
-            if (newStatus.toLowerCase() !== (issueToUpdate.status || '').toLowerCase()) {
-                updateOp.$set.status = newStatus.toLowerCase();
+            const currentStatus = (issueToUpdate.status || 'pending').toLowerCase();
+            if (newStatus.toLowerCase() !== currentStatus) {
+                updateOp.$set = { ...(updateOp.$set || {}), status: newStatus.toLowerCase() };
                 
+                // Ensure statusHistory is an array before pushing
                 const statusHistory = Array.isArray(issueToUpdate.statusHistory) ? issueToUpdate.statusHistory : [];
-                updateOp.$set.statusHistory = [...statusHistory, { status: newStatus.toLowerCase(), date: new Date() }];
+                const newHistoryEntry = { status: newStatus.toLowerCase(), date: new Date() };
+
+                // Atomically add to statusHistory array
+                updateOp.$push = { ...(updateOp.$push || {}), statusHistory: newHistoryEntry };
             }
         }
         
@@ -135,13 +141,14 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
             const typedKey = key as keyof Issue;
             if (typedKey !== 'status' && typedKey !== 'id') {
                 if (updates[typedKey] !== undefined) {
+                    if (!updateOp.$set) updateOp.$set = {};
                     (updateOp.$set as any)[typedKey] = (updates as any)[typedKey];
                 }
             }
         }
         
-        if (Object.keys(updateOp.$set).length > 0) {
-            await IssueModel.findByIdAndUpdate(id, updateOp, { new: true }).lean();
+        if (Object.keys(updateOp).length > 0) {
+            await IssueModel.findByIdAndUpdate(id, updateOp, { new: true, upsert: false }).lean();
         }
 
     } catch (error) {
@@ -163,9 +170,9 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             
             if (updateData.status) {
                 let newStatus = updateData.status;
-                 // Map "Assigned" from dashboard to "In Progress" for the database
+                 // Map "Assigned" from dashboard to "inProgress" for the database
                 if (newStatus === 'Assigned') {
-                    newStatus = 'In Progress';
+                    newStatus = 'inProgress';
                 }
                  setOp.status = newStatus.toLowerCase();
                  pushOp.statusHistory = { status: newStatus.toLowerCase(), date: new Date() };

@@ -1,6 +1,6 @@
 
 
-export type IssueStatus = "Pending" | "Approved" | "Assigned" | "Resolved" | "Rejected" | "In Progress";
+export type IssueStatus = "Pending" | "Approved" | "Assigned" | "Resolved" | "Rejected" | "inProgress";
 export type IssuePriority = "High" | "Medium" | "Low";
 
 export interface Issue {

@@ -16,7 +16,7 @@ const legendStatusColors: Record<IssueStatus, string> = {
     Pending: 'bg-yellow-500',
     Approved: 'bg-blue-500',
     Assigned: 'bg-indigo-500',
-    'In Progress': 'bg-indigo-500',
+    inProgress: 'bg-indigo-500',
     Resolved: 'bg-green-500',
     Rejected: 'bg-red-500',
 };
@@ -113,7 +113,7 @@ export default function MapPage() {
                 <div className="flex items-center gap-6 text-sm">
                     <p className="font-semibold">Legend:</p>
                     <div className="flex flex-wrap items-center gap-4">
-                        {Object.entries(legendStatusColors).filter(([key]) => key !== 'In Progress').map(([status, colorClass]) => (
+                        {Object.entries(legendStatusColors).filter(([key]) => key !== 'inProgress').map(([status, colorClass]) => (
                             <div key={status} className="flex items-center gap-2">
                                 <span className={cn("h-3 w-3 rounded-full", colorClass)}></span>
                                 <span>{status}</span>
