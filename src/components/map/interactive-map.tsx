@@ -60,8 +60,10 @@ export function InteractiveMap({issues}: {issues: Issue[]}) {
                 center={center}
                 defaultZoom={7}
                 gestureHandling={'greedy'}
-                disableDefaultUI={true}
+                disableDefaultUI={false}
                 mapId={'a2a2153c3143f605'}
+                fullscreenControl={true}
+                rotateControl={true}
             >
                 {issues.map((issue) => (
                      <AdvancedMarker 
