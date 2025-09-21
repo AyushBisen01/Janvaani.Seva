@@ -85,41 +85,44 @@ export async function getUsers(): Promise<User[]> {
 export async function updateIssue(id: string, updates: Partial<Issue>) {
     try {
         await dbConnect();
-
-        const updateOp: any = { $set: {} };
         const issueToUpdate = await IssueModel.findById(id);
 
         if (!issueToUpdate) {
-            console.error(`Issue with id ${id} not found in DB`);
-            return null;
+            throw new Error(`Issue with id ${id} not found in DB`);
         }
         
-        // Ensure statusHistory exists
-        if (!issueToUpdate.statusHistory || issueToUpdate.statusHistory.length === 0) {
-            issueToUpdate.statusHistory = [{ status: issueToUpdate.status, date: issueToUpdate.createdAt }];
-        }
+        const updateOp: any = { $set: {} };
+        let statusChanged = false;
 
+        // Process all updates
         for (const key in updates) {
             const typedKey = key as keyof Issue;
+            
             if (typedKey === 'status') {
-                updateOp.$set.status = updates.status;
                 if (issueToUpdate.status !== updates.status) {
-                    updateOp.$push = { statusHistory: { status: updates.status, date: new Date() } };
+                    statusChanged = true;
+                    updateOp.$set.status = updates.status;
                 }
             } else if (typedKey === 'priority' || typedKey === 'assignedTo' || typedKey === 'resolvedAt') {
                  updateOp.$set[key] = updates[typedKey];
             }
         }
         
-        if (Object.keys(updateOp.$set).length > 0) {
+        // If status changed, push to history
+        if (statusChanged) {
+            updateOp.$push = { statusHistory: { status: updates.status, date: new Date() } };
+        }
+        
+        // Only perform update if there's something to change
+        if (Object.keys(updateOp.$set).length > 0 || statusChanged) {
             const updatedIssue = await IssueModel.findByIdAndUpdate(id, updateOp, { new: true }).lean();
             return updatedIssue;
         }
-        return issueToUpdate;
+
+        return issueToUpdate.toObject();
 
     } catch (error) {
         console.error(`Failed to update issue ${id} in DB:`, error);
-        // Fallback to placeholder update logic if needed, or just throw
         throw error;
     }
 }
@@ -127,11 +130,16 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
 export async function updateMultipleIssues(updates: (Partial<Issue> & {id: string})[]) {
     try {
         await dbConnect();
+        if (updates.length === 0) return await getIssues();
+
         const bulkOps = updates.map(update => {
             const { id, ...updateData } = update;
             const updateOp: any = { $set: {} };
+            
+            // This logic assumes bulk updates are primarily for status, priority, and assignment
             if (updateData.status) {
                  updateOp.$set.status = updateData.status;
+                 // Add to statusHistory when status changes
                  updateOp.$push = { statusHistory: { status: updateData.status, date: new Date() } };
             }
              if (updateData.priority) updateOp.$set.priority = updateData.priority;
@@ -145,9 +153,7 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             };
         });
 
-        if (bulkOps.length > 0) {
-            await IssueModel.bulkWrite(bulkOps);
-        }
+        await IssueModel.bulkWrite(bulkOps);
         return await getIssues();
 
     } catch (error) {
