@@ -5,6 +5,7 @@ import type { Issue, User } from './types';
 import dbConnect from '@/lib/db';
 import IssueModel from '@/lib/models/Issue';
 import UserModel from '@/lib/models/User';
+import DetectionModel from '@/lib/models/Detection';
 import {_getUsers, _getIssues} from '@/lib/placeholder-data'
 
 // Helper to capitalize first letter
@@ -16,33 +17,44 @@ export async function getIssues(): Promise<Issue[]> {
     await dbConnect();
     const realIssues = await IssueModel.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).lean();
     
+    // Fetch the latest detection
+    const latestDetection = await DetectionModel.findOne({}).sort({ createdAt: -1 }).lean();
+
     // Map database documents to the Issue type
-    const mappedIssues = realIssues.map(issue => ({
-      id: issue._id.toString(),
-      category: issue.title,
-      description: issue.description,
-      location: {
-        address: issue.location,
-        lat: issue.coordinates?.latitude || 0,
-        lng: issue.coordinates?.longitude || 0,
-      },
-      status: capitalize(issue.status || 'pending') as any, // Capitalize status, default to pending
-      priority: issue.priority || 'Medium', // Default priority
-      reportedAt: issue.createdAt,
-      resolvedAt: issue.resolvedAt,
-      assignedTo: issue.assignedTo,
-      citizen: {
-        name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
-        contact: (issue.userId as any)?.email || 'N/A',
-      },
-      imageUrl: issue.imageUrl,
-      imageHint: issue.title, // Use title as a hint
-      proofUrl: issue.proofUrl,
-      proofHint: issue.proofHint,
-      statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
-        ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
-        : [{ status: capitalize(issue.status || 'pending'), date: issue.createdAt }] // Create default history
-    }));
+    const mappedIssues = realIssues.map((issue, index) => {
+      // For the most recent issue, replace its imageUrl with the annotated one
+      let imageUrl = issue.imageUrl;
+      if (index === 0 && latestDetection && latestDetection.annotatedImageUrl) {
+        imageUrl = latestDetection.annotatedImageUrl;
+      }
+      
+      return {
+        id: issue._id.toString(),
+        category: issue.title,
+        description: issue.description,
+        location: {
+          address: issue.location,
+          lat: issue.coordinates?.latitude || 0,
+          lng: issue.coordinates?.longitude || 0,
+        },
+        status: capitalize(issue.status || 'pending') as any, // Capitalize status, default to pending
+        priority: issue.priority || 'Medium', // Default priority
+        reportedAt: issue.createdAt,
+        resolvedAt: issue.resolvedAt,
+        assignedTo: issue.assignedTo,
+        citizen: {
+          name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
+          contact: (issue.userId as any)?.email || 'N/A',
+        },
+        imageUrl: imageUrl,
+        imageHint: issue.title, // Use title as a hint
+        proofUrl: issue.proofUrl,
+        proofHint: issue.proofHint,
+        statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
+          ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
+          : [{ status: capitalize(issue.status || 'pending'), date: issue.createdAt }] // Create default history
+      };
+    });
 
     const placeholderIssues = _getIssues();
     
@@ -91,29 +103,38 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         const issueToUpdate = await IssueModel.findById(id);
 
         if (!issueToUpdate) {
-            throw new Error(`Issue with id ${id} not found in DB`);
+            // If the issue is not in the real DB, we can't update it.
+            // This can happen if the issue is a placeholder.
+            console.warn(`Issue with id ${id} not found in DB, cannot update.`);
+            return;
         }
         
         const updateOp: any = { $set: {} };
 
         // Handle status change and history
-        if (updates.status && updates.status.toLowerCase() !== issueToUpdate.status.toLowerCase()) {
+        if (updates.status && updates.status.toLowerCase() !== (issueToUpdate.status || '').toLowerCase()) {
             const newStatus = updates.status.toLowerCase();
             updateOp.$set.status = newStatus;
             
-            // Push to statusHistory. If statusHistory doesn't exist, MongoDB will create it.
-            updateOp.$push = { statusHistory: { status: newStatus, date: new Date() } };
+            // Check if statusHistory exists and is an array, otherwise initialize it
+            const statusHistory = Array.isArray(issueToUpdate.statusHistory) ? issueToUpdate.statusHistory : [];
+            
+            updateOp.$set.statusHistory = [...statusHistory, { status: newStatus, date: new Date() }];
+
+        } else if (updates.statusHistory) {
+            // This case handles direct manipulation of statusHistory if needed, e.g. from the new logic.
+            updateOp.$set.statusHistory = updates.statusHistory;
         }
 
-        // Handle other fields, making sure not to conflict with $push
+        // Handle other fields, making sure not to conflict with other operations
         for (const key in updates) {
             const typedKey = key as keyof Issue;
             if (typedKey !== 'status' && typedKey !== 'id' && typedKey !== 'statusHistory') {
-                 updateOp.$set[key] = (updates as any)[typedKey];
+                 (updateOp.$set as any)[typedKey] = (updates as any)[typedKey];
             }
         }
         
-        if (Object.keys(updateOp.$set).length > 0 || updateOp.$push) {
+        if (Object.keys(updateOp.$set).length > 0) {
             await IssueModel.findByIdAndUpdate(id, updateOp, { new: true }).lean();
         }
 
@@ -132,25 +153,32 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             const { id, ...updateData } = update;
             
             const updateOp: any = { $set: {} };
+            const pushOp: any = {};
             
             if (updateData.status) {
                  const newStatus = updateData.status.toLowerCase();
-                 updateOp.$set.status = newStatus;
-                 updateOp.$push = { statusHistory: { status: newStatus, date: new Date() } };
+                 updateOp.status = newStatus;
+                 pushOp.statusHistory = { status: newStatus, date: new Date() };
             }
-             if (updateData.priority) updateOp.$set.priority = updateData.priority;
-             if (updateData.assignedTo) updateOp.$set.assignedTo = updateData.assignedTo;
+             if (updateData.priority) updateOp.priority = updateData.priority;
+             if (updateData.assignedTo) updateOp.assignedTo = updateData.assignedTo;
+
+            const finalUpdate: any = {};
+            if(Object.keys(updateOp).length > 0) finalUpdate.$set = updateOp;
+            if(Object.keys(pushOp).length > 0) finalUpdate.$push = pushOp;
 
             return {
                 updateOne: {
                     filter: { _id: id },
-                    update: updateOp
+                    update: finalUpdate
                 }
             };
         });
+        
+        const validBulkOps = bulkOps.filter(op => op.updateOne.update.$set || op.updateOne.update.$push);
 
-        if (bulkOps.length > 0) {
-            await IssueModel.bulkWrite(bulkOps);
+        if (validBulkOps.length > 0) {
+            await IssueModel.bulkWrite(validBulkOps);
         }
 
     } catch (error) {

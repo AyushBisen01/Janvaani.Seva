@@ -24,7 +24,7 @@ interface IIssue extends Document {
 }
 
 const IssueSchema: Schema<IIssue> = new Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   title: String,
   description: String,
   location: String,
