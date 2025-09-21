@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { Map, AdvancedMarker, InfoWindow, useMap, Circle } from '@vis.gl/react-google-maps';
+import { Map, AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import type { Issue, IssueStatus } from '@/lib/types';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,20 @@ function haversineDistance(coords1: {lat: number, lng: number}, coords2: {lat: n
 
   return R * c; // in metres
 }
+
+const MapCircle = (props: google.maps.CircleOptions) => {
+  const map = useMap();
+  const circle = React.useRef<google.maps.Circle | null>(null);
+
+  React.useEffect(() => {
+    if (!map) return;
+    circle.current = new google.maps.Circle({ ...props, map });
+    return () => circle.current?.setMap(null);
+  }, [map, props]);
+
+  return null;
+};
+
 
 export function HighPriorityMap({issues}: {issues: Issue[]}) {
     const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
@@ -123,7 +137,7 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
                 ))}
 
                 {highPriorityZones.map((zone, index) => (
-                     <Circle
+                     <MapCircle
                         key={index}
                         center={zone}
                         radius={10000} // 10km
@@ -157,4 +171,3 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
         </div>
     );
 }
-
