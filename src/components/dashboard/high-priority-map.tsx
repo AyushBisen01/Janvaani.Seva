@@ -118,13 +118,15 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
 
 
     return (
-        <div className="h-[400px] w-full overflow-hidden rounded-lg border">
+        <div className="h-[400px] w-full rounded-lg border">
             <Map
                 center={center}
                 defaultZoom={7}
                 gestureHandling={'greedy'}
-                disableDefaultUI={true}
+                disableDefaultUI={false}
                 mapId={'a2a2153c3143f605'}
+                fullscreenControl={true}
+                rotateControl={true}
             >
                 {issues.map((issue) => (
                      <AdvancedMarker 
