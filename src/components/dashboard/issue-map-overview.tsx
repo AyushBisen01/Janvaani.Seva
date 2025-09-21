@@ -1,77 +1,25 @@
 
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
-import { Map, useMap } from '@vis.gl/react-google-maps';
+import { useMemo } from 'react';
+import { Map } from '@vis.gl/react-google-maps';
 import type { Issue } from '@/lib/types';
-
-// Helper to group issues that are close to each other
-function clusterIssues(issues: Issue[], distance: number) {
-  const clusters: { lat: number; lng: number; count: number; issues: Issue[] }[] = [];
-
-  issues.forEach(issue => {
-    let found = false;
-    for (const cluster of clusters) {
-      const d = google.maps.geometry.spherical.computeDistanceBetween(
-        new google.maps.LatLng(issue.location),
-        new google.maps.LatLng(cluster)
-      );
-      if (d < distance) {
-        cluster.lat = (cluster.lat * cluster.count + issue.location.lat) / (cluster.count + 1);
-        cluster.lng = (cluster.lng * cluster.count + issue.location.lng) / (cluster.count + 1);
-        cluster.count++;
-        cluster.issues.push(issue);
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      clusters.push({ ...issue.location, count: 1, issues: [issue] });
-    }
-  });
-
-  return clusters;
-}
-
-// A custom Circle component that uses the Google Maps API directly
-function Circle(props: google.maps.CircleOptions) {
-  const map = useMap();
-  const [circle, setCircle] = useState<google.maps.Circle | null>(null);
-
-  useEffect(() => {
-    if (!map) return;
-    if (!circle) {
-      setCircle(new google.maps.Circle(props));
-    }
-
-    return () => {
-      if (circle) {
-        circle.setMap(null);
-      }
-    };
-  }, [map, circle, props]);
-
-  useEffect(() => {
-    if (circle) {
-      circle.setOptions(props);
-      circle.setMap(map);
-    }
-  }, [circle, props, map]);
-
-  return null;
-}
-
+import { HeatmapLayer } from '../map/heatmap-layer';
 
 export function IssueMapOverview({issues}: {issues: Issue[]}) {
-
-  const issueClusters = useMemo(() => {
-    // Ensure the geometry library is loaded before clustering
-    if (typeof window === 'undefined' || !window.google?.maps?.geometry) {
-      return [];
-    }
-    // Cluster issues within a 5km radius
-    return clusterIssues(issues, 5000); 
+  const heatmapData = useMemo(() => {
+    return issues.map(issue => ({
+      lat: issue.location.lat,
+      lng: issue.location.lng,
+      weight: 1, // Each issue has a weight of 1
+    }));
   }, [issues]);
+
+  const heatmapOptions = useMemo(() => ({
+    radius: 10000, // 10km radius
+    opacity: 0.8,
+    dissipating: true,
+  }), []);
 
 
   const center = useMemo(() => {
@@ -101,18 +49,7 @@ export function IssueMapOverview({issues}: {issues: Issue[]}) {
         disableDefaultUI={true}
         mapId={'a2a2153c3143f605'}
       >
-        {issueClusters.map((cluster, index) => (
-            <Circle
-                key={index}
-                center={{lat: cluster.lat, lng: cluster.lng}}
-                radius={500 + cluster.count * 200} // Radius grows with issue count
-                strokeColor={'hsl(var(--destructive))'}
-                strokeOpacity={0.8}
-                strokeWeight={2}
-                fillColor={'hsl(var(--destructive))'}
-                fillOpacity={0.35}
-            />
-        ))}
+        <HeatmapLayer data={heatmapData} options={heatmapOptions} />
       </Map>
     </div>
   );
