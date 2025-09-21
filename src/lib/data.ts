@@ -28,6 +28,11 @@ export async function getIssues(): Promise<Issue[]> {
         imageUrl = latestDetection.annotatedImageUrl;
       }
       
+      let status = capitalize(issue.status || 'pending');
+      if (status === 'In Progress') {
+        status = 'Assigned';
+      }
+
       return {
         id: issue._id.toString(),
         category: issue.title,
@@ -37,7 +42,7 @@ export async function getIssues(): Promise<Issue[]> {
           lat: issue.coordinates?.latitude || 0,
           lng: issue.coordinates?.longitude || 0,
         },
-        status: capitalize(issue.status || 'pending') as any, // Capitalize status, default to pending
+        status: status as any,
         priority: issue.priority || 'Medium', // Default priority
         reportedAt: issue.createdAt,
         resolvedAt: issue.resolvedAt,
@@ -103,34 +108,35 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         const issueToUpdate = await IssueModel.findById(id);
 
         if (!issueToUpdate) {
-            // If the issue is not in the real DB, we can't update it.
-            // This can happen if the issue is a placeholder.
             console.warn(`Issue with id ${id} not found in DB, cannot update.`);
             return;
         }
         
         const updateOp: any = { $set: {} };
 
-        // Handle status change and history
-        if (updates.status && updates.status.toLowerCase() !== (issueToUpdate.status || '').toLowerCase()) {
-            const newStatus = updates.status.toLowerCase();
-            updateOp.$set.status = newStatus;
+        if (updates.status) {
+            let newStatus = updates.status;
+            // Map "Assigned" from dashboard to "In Progress" for the database
+            if (newStatus === 'Assigned') {
+                newStatus = 'In Progress';
+            }
             
-            // Check if statusHistory exists and is an array, otherwise initialize it
-            const statusHistory = Array.isArray(issueToUpdate.statusHistory) ? issueToUpdate.statusHistory : [];
-            
-            updateOp.$set.statusHistory = [...statusHistory, { status: newStatus, date: new Date() }];
-
-        } else if (updates.statusHistory) {
-            // This case handles direct manipulation of statusHistory if needed, e.g. from the new logic.
-            updateOp.$set.statusHistory = updates.statusHistory;
+            // Only update if status is different
+            if (newStatus.toLowerCase() !== (issueToUpdate.status || '').toLowerCase()) {
+                updateOp.$set.status = newStatus.toLowerCase();
+                
+                const statusHistory = Array.isArray(issueToUpdate.statusHistory) ? issueToUpdate.statusHistory : [];
+                updateOp.$set.statusHistory = [...statusHistory, { status: newStatus.toLowerCase(), date: new Date() }];
+            }
         }
-
-        // Handle other fields, making sure not to conflict with other operations
+        
+        // Handle other fields
         for (const key in updates) {
             const typedKey = key as keyof Issue;
-            if (typedKey !== 'status' && typedKey !== 'id' && typedKey !== 'statusHistory') {
-                 (updateOp.$set as any)[typedKey] = (updates as any)[typedKey];
+            if (typedKey !== 'status' && typedKey !== 'id') {
+                if (updates[typedKey] !== undefined) {
+                    (updateOp.$set as any)[typedKey] = (updates as any)[typedKey];
+                }
             }
         }
         
@@ -152,19 +158,23 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         const bulkOps = updates.map(update => {
             const { id, ...updateData } = update;
             
-            const updateOp: any = { $set: {} };
+            const setOp: any = {};
             const pushOp: any = {};
             
             if (updateData.status) {
-                 const newStatus = updateData.status.toLowerCase();
-                 updateOp.status = newStatus;
-                 pushOp.statusHistory = { status: newStatus, date: new Date() };
+                let newStatus = updateData.status;
+                 // Map "Assigned" from dashboard to "In Progress" for the database
+                if (newStatus === 'Assigned') {
+                    newStatus = 'In Progress';
+                }
+                 setOp.status = newStatus.toLowerCase();
+                 pushOp.statusHistory = { status: newStatus.toLowerCase(), date: new Date() };
             }
-             if (updateData.priority) updateOp.priority = updateData.priority;
-             if (updateData.assignedTo) updateOp.assignedTo = updateData.assignedTo;
+             if (updateData.priority) setOp.priority = updateData.priority;
+             if (updateData.assignedTo) setOp.assignedTo = updateData.assignedTo;
 
             const finalUpdate: any = {};
-            if(Object.keys(updateOp).length > 0) finalUpdate.$set = updateOp;
+            if(Object.keys(setOp).length > 0) finalUpdate.$set = setOp;
             if(Object.keys(pushOp).length > 0) finalUpdate.$push = pushOp;
 
             return {

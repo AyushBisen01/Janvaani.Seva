@@ -159,6 +159,7 @@ export default function TriagePage() {
   const [activeTab, setActiveTab] = React.useState('pending');
 
   const updateIssues = async (updates: (Partial<Issue> & { id: string })[]) => {
+    const originalIssues = allIssues ? [...allIssues] : [];
     try {
         const updatedIssues = allIssues?.map(issue => {
             const update = updates.find(u => u.id === issue.id);
@@ -174,7 +175,7 @@ export default function TriagePage() {
             body: JSON.stringify(updates),
         });
 
-        mutate();
+        await mutate();
     } catch(e) {
         console.error(e);
         toast({
@@ -182,7 +183,7 @@ export default function TriagePage() {
             title: 'Update failed',
             description: 'Could not update issues.',
         });
-        mutate();
+        mutate(originalIssues, false);
     }
   }
 
@@ -234,7 +235,6 @@ export default function TriagePage() {
         status: 'Assigned' as const,
         assignedTo: department,
         priority,
-        statusHistory: [...(allIssues.find(i => i.id === id)?.statusHistory || []), {status: 'Assigned' as const, date: new Date().toISOString() as any}]
     }));
     updateIssues(updates);
     toast({ title: "Issues Assigned", description: `${ids.length} issue(s) have been assigned to ${department}.`});

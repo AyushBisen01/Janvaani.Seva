@@ -14,6 +14,7 @@ const statusColors: Record<IssueStatus, string> = {
     Pending: 'text-yellow-500',
     Approved: 'text-blue-500',
     Assigned: 'text-indigo-500',
+    'In Progress': 'text-indigo-500',
     Resolved: 'text-green-500',
     Rejected: 'text-red-500',
 };
@@ -22,6 +23,7 @@ const statusBadgeColors: Record<IssueStatus, string> = {
     Pending: 'bg-yellow-100 text-yellow-800',
     Approved: 'bg-blue-100 text-blue-800',
     Assigned: 'bg-indigo-100 text-indigo-800',
+    'In Progress': 'bg-indigo-100 text-indigo-800',
     Resolved: 'bg-green-100 text-green-800',
     Rejected: 'bg-red-100 text-red-800',
 };

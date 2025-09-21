@@ -40,6 +40,7 @@ const statusColors: Record<IssueStatus, string> = {
     Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     Approved: 'bg-blue-100 text-blue-800 border-blue-200',
     Assigned: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    'In Progress': 'bg-indigo-100 text-indigo-800 border-indigo-200',
     Resolved: 'bg-green-100 text-green-800 border-green-200',
     Rejected: 'bg-red-100 text-red-800 border-red-200',
 };
@@ -78,7 +79,7 @@ export default function IssueDetailPage() {
       }
 
       // Trigger a revalidation from server
-      mutate();
+      await mutate();
     } catch (error) {
       console.error('Failed to update issue:', error);
       toast({
@@ -130,7 +131,6 @@ export default function IssueDetailPage() {
         status: 'Assigned', 
         assignedTo: department, 
         priority,
-        statusHistory: [...(issue.statusHistory || []), {status: 'Assigned', date: new Date().toISOString() as any}] 
     });
     toast({ title: "Issue Assigned", description: `Issue #${issue.id} has been assigned to ${department}.`});
   };
