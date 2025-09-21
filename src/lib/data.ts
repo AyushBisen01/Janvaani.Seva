@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import type { Issue, User } from './types';
@@ -27,8 +26,8 @@ export async function getIssues(): Promise<Issue[]> {
         lat: issue.coordinates?.latitude || 0,
         lng: issue.coordinates?.longitude || 0,
       },
-      status: capitalize(issue.status) as any, // Capitalize status
-      priority: issue.priority || 'Medium',
+      status: capitalize(issue.status || 'pending') as any, // Capitalize status, default to pending
+      priority: issue.priority || 'Medium', // Default priority
       reportedAt: issue.createdAt,
       resolvedAt: issue.resolvedAt,
       assignedTo: issue.assignedTo,
@@ -42,7 +41,7 @@ export async function getIssues(): Promise<Issue[]> {
       proofHint: issue.proofHint,
       statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
         ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
-        : [{ status: capitalize(issue.status), date: issue.createdAt }]
+        : [{ status: capitalize(issue.status || 'pending'), date: issue.createdAt }] // Create default history
     }));
 
     const placeholderIssues = _getIssues();
@@ -101,22 +100,22 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         if (updates.status && updates.status.toLowerCase() !== issueToUpdate.status.toLowerCase()) {
             const newStatus = updates.status.toLowerCase();
             updateOp.$set.status = newStatus;
+            
+            // Push to statusHistory. If statusHistory doesn't exist, MongoDB will create it.
             updateOp.$push = { statusHistory: { status: newStatus, date: new Date() } };
         }
 
-        // Handle other fields
+        // Handle other fields, making sure not to conflict with $push
         for (const key in updates) {
             const typedKey = key as keyof Issue;
-            if (typedKey !== 'status' && typedKey !== 'id') {
-                 updateOp.$set[key] = updates[typedKey];
+            if (typedKey !== 'status' && typedKey !== 'id' && typedKey !== 'statusHistory') {
+                 updateOp.$set[key] = (updates as any)[typedKey];
             }
         }
         
-        if (Object.keys(updateOp.$set).length > 0) {
+        if (Object.keys(updateOp.$set).length > 0 || updateOp.$push) {
             await IssueModel.findByIdAndUpdate(id, updateOp, { new: true }).lean();
         }
-
-        return await getIssues();
 
     } catch (error) {
         console.error(`Failed to update issue ${id} in DB:`, error);
@@ -127,10 +126,11 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
 export async function updateMultipleIssues(updates: (Partial<Issue> & {id: string})[]) {
     try {
         await dbConnect();
-        if (updates.length === 0) return await getIssues();
+        if (updates.length === 0) return;
 
         const bulkOps = updates.map(update => {
             const { id, ...updateData } = update;
+            
             const updateOp: any = { $set: {} };
             
             if (updateData.status) {
@@ -149,8 +149,9 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             };
         });
 
-        await IssueModel.bulkWrite(bulkOps);
-        return await getIssues();
+        if (bulkOps.length > 0) {
+            await IssueModel.bulkWrite(bulkOps);
+        }
 
     } catch (error) {
         console.error('Failed to bulk update issues in DB:', error);
