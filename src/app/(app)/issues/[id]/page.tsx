@@ -28,13 +28,13 @@ import {
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { MapProvider } from '@/components/map/map-provider';
-import { IssueMapOverview } from '@/components/dashboard/issue-map-overview';
 import { FormattedDate } from '@/components/formatted-date';
 import { cn } from '@/lib/utils';
 import type { Issue, IssuePriority, IssueStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { AssignIssueDialog } from '@/components/issues/assign-issue-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IssueDetailMap } from '@/components/issues/issue-detail-map';
 
 const statusColors: Record<IssueStatus, string> = {
     Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -281,7 +281,7 @@ export default function IssueDetailPage() {
             </CardHeader>
             <CardContent>
               <MapProvider>
-                <IssueMapOverview issues={[issue]} />
+                <IssueDetailMap issue={issue} />
               </MapProvider>
             </CardContent>
           </Card>
