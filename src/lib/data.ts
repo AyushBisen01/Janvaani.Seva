@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import type { Issue, User } from './types';
@@ -92,12 +93,16 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
             console.error(`Issue with id ${id} not found in DB`);
             return null;
         }
+        
+        // Ensure statusHistory exists
+        if (!issueToUpdate.statusHistory || issueToUpdate.statusHistory.length === 0) {
+            issueToUpdate.statusHistory = [{ status: issueToUpdate.status, date: issueToUpdate.createdAt }];
+        }
 
         for (const key in updates) {
             const typedKey = key as keyof Issue;
             if (typedKey === 'status') {
                 updateOp.$set.status = updates.status;
-                // Add to status history if it's a valid status change
                 if (issueToUpdate.status !== updates.status) {
                     updateOp.$push = { statusHistory: { status: updates.status, date: new Date() } };
                 }
