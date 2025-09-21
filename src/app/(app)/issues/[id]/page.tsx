@@ -60,21 +60,24 @@ export default function IssueDetailPage() {
   const issue = issues?.find((i) => i.id === id);
 
   const updateIssue = async (id: string, updates: Partial<Issue>) => {
-    try {
-      // Optimistically update the UI
-      mutate(
-        issues?.map((i) => (i.id === id ? { ...i, ...updates } : i)),
-        false
-      );
+    const originalIssues = issues;
+    // Optimistically update the UI
+    const newIssues = issues?.map((i) => (i.id === id ? { ...i, ...updates } : i))
+    mutate(newIssues, false);
 
+    try {
       // Make API call to update the issue
-      await fetch(`/api/issues`, {
+      const response = await fetch(`/api/issues`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updates }),
       });
 
-      // Trigger a revalidation
+      if (!response.ok) {
+        throw new Error('Failed to update issue');
+      }
+
+      // Trigger a revalidation from server
       mutate();
     } catch (error) {
       console.error('Failed to update issue:', error);
@@ -83,8 +86,8 @@ export default function IssueDetailPage() {
         title: 'Update failed',
         description: 'Could not update the issue.',
       });
-      // Optionally rollback optimistic update
-      mutate();
+      // Rollback optimistic update
+      mutate(originalIssues, false);
     }
   };
 
