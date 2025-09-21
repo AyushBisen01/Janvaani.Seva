@@ -25,10 +25,10 @@ export interface Issue {
   imageHint: string;
   proofUrl?: string;
   proofHint?: string;
-  statusHistory?: { status: IssueStatus, date: Date | string }[];
+  statusHistory?: { status: IssueStatus | string, date: Date | string }[];
 }
 
-export type UserRole = "Super Admin" | "Department Head" | "Staff";
+export type UserRole = "Super Admin" | "Department Head" | "Staff" | "Citizen";
 
 export interface User {
   id: string;

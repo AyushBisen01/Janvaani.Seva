@@ -1,278 +1,152 @@
 
+'use server';
+
 import type { Issue, User } from './types';
+import dbConnect from '@/lib/db';
+import IssueModel from '@/lib/models/Issue';
+import UserModel from '@/lib/models/User';
+import {_getUsers, _getIssues} from '@/lib/placeholder-data'
 
-// This file now acts as a mock database.
-// The API routes will use these arrays as their data source.
 
-let users: User[] = [
-  {
-    id: 'user-1',
-    name: 'Admin User',
-    email: 'admin@civic.gov',
-    role: 'Super Admin',
-    avatarUrl: 'https://i.pravatar.cc/150?u=admin@civic.gov',
-  },
-  {
-    id: 'user-2',
-    name: 'Sanitation Head',
-    email: 'sanitation.head@civic.gov',
-    role: 'Department Head',
-    avatarUrl: 'https://i.pravatar.cc/150?u=sanitation.head@civic.gov',
-    department: 'Sanitation Dept.'
-  },
-  {
-    id: 'user-3',
-    name: 'PWD Staff',
-    email: 'pwd.staff@civic.gov',
-    role: 'Staff',
-    avatarUrl: 'https://i.pravatar.cc/150?u=pwd.staff@civic.gov',
-    department: 'Public Works Dept.'
-  },
-];
+// Functions to interact with the real database
+export async function getIssues(): Promise<Issue[]> {
+  try {
+    await dbConnect();
+    const realIssues = await IssueModel.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).lean();
+    
+    // Map database documents to the Issue type
+    const mappedIssues = realIssues.map(issue => ({
+      id: issue._id.toString(),
+      category: issue.title,
+      description: issue.description,
+      location: {
+        address: issue.location,
+        lat: issue.coordinates?.latitude || 0,
+        lng: issue.coordinates?.longitude || 0,
+      },
+      status: issue.status as any,
+      priority: issue.priority || 'Medium',
+      reportedAt: issue.createdAt,
+      resolvedAt: issue.resolvedAt,
+      assignedTo: issue.assignedTo,
+      citizen: {
+        name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
+        contact: (issue.userId as any)?.email || 'N/A',
+      },
+      imageUrl: issue.imageUrl,
+      imageHint: issue.title, // Use title as a hint
+      proofUrl: issue.proofUrl,
+      proofHint: issue.proofHint,
+      statusHistory: issue.statusHistory || [{ status: issue.status, date: issue.createdAt }]
+    }));
 
-let issues: Issue[] = [
-  {
-    id: 'CIV-001',
-    category: 'Pothole',
-    description: 'Large pothole at the entrance of the main market, causing traffic issues.',
-    location: { address: 'Sitabuldi Main Rd, Nagpur', lat: 21.1463, lng: 79.0822 },
-    status: 'Pending',
-    priority: 'High',
-    reportedAt: '2024-07-20T09:00:00Z',
-    citizen: { name: 'John Doe', contact: 'john.d@email.com' },
-    imageUrl: 'https://picsum.photos/seed/pothole1/800/600',
-    imageHint: 'pothole road'
-  },
-  {
-    id: 'CIV-002',
-    category: 'Garbage',
-    description: 'Garbage bin overflowing for three days near the park.',
-    location: { address: 'Dharampeth, Nagpur', lat: 21.1434, lng: 79.0622 },
-    status: 'Assigned',
-    priority: 'Medium',
-    reportedAt: '2024-07-19T14:30:00Z',
-    assignedTo: 'Sanitation Dept.',
-    citizen: { name: 'Jane Smith', contact: 'jane.s@email.com' },
-    imageUrl: 'https://picsum.photos/seed/garbage1/800/600',
-    imageHint: 'garbage overflow'
-  },
-  {
-    id: 'CIV-003',
-    category: 'Water Leakage',
-    description: 'Clean water pipe leakage on the sidewalk.',
-    location: { address: 'Koregaon Park, Pune', lat: 18.5362, lng: 73.8939 },
-    status: 'Resolved',
-    priority: 'High',
-    reportedAt: '2024-07-18T11:00:00Z',
-    resolvedAt: '2024-07-19T17:00:00Z',
-    assignedTo: 'Water Dept.',
-    citizen: { name: 'Sam Wilson', contact: 'sam.w@email.com' },
-    imageUrl: 'https://picsum.photos/seed/water1/800/600',
-    imageHint: 'water leak',
-    proofUrl: 'https://picsum.photos/seed/proof1/800/600',
-    proofHint: 'pipe repaired'
-  },
-  {
-    id: 'CIV-004',
-    category: 'Streetlight Outage',
-    description: 'Streetlight not working for a week, causing safety concerns at night.',
-    location: { address: 'Bandra West, Mumbai', lat: 19.0544, lng: 72.8400 },
-    status: 'Approved',
-    priority: 'Medium',
-    reportedAt: '2024-07-21T08:00:00Z',
-    citizen: { name: 'Emily Carter', contact: 'emily.c@email.com' },
-    imageUrl: 'https://picsum.photos/seed/light1/800/600',
-    imageHint: 'street light'
-  },
-    {
-    id: 'CIV-005',
-    category: 'Pothole',
-    description: 'Multiple small potholes on the highway exit ramp.',
-    location: { address: 'Mumbai-Pune Expressway, Navi Mumbai', lat: 19.0330, lng: 73.0297 },
-    status: 'Pending',
-    priority: 'Medium',
-    reportedAt: '2024-07-22T10:15:00Z',
-    citizen: { name: 'Michael Brown', contact: 'michael.b@email.com' },
-    imageUrl: 'https://picsum.photos/seed/pothole2/800/600',
-    imageHint: 'pothole highway'
-  },
-  {
-    id: 'CIV-006',
-    category: 'Garbage',
-    description: 'Construction debris dumped illegally by the river bank.',
-    location: { address: 'Ramdaspeth, Nagpur', lat: 21.1352, lng: 79.0645 },
-    status: 'Assigned',
-    priority: 'High',
-    reportedAt: '2024-07-21T18:45:00Z',
-    assignedTo: 'Sanitation Dept.',
-    citizen: { name: 'Jessica White', contact: 'jessica.w@email.com' },
-    imageUrl: 'https://picsum.photos/seed/garbage2/800/600',
-    imageHint: 'debris dumped'
-  },
-  {
-    id: 'CIV-007',
-    category: 'Broken Signage',
-    description: 'Stop sign at the intersection is broken and lying on the ground.',
-    location: { address: 'FC Road, Pune', lat: 18.5224, lng: 73.8415 },
-    status: 'Pending',
-    priority: 'High',
-    reportedAt: '2024-07-23T11:00:00Z',
-    citizen: { name: 'David Garcia', contact: 'david.g@email.com' },
-    imageUrl: 'https://picsum.photos/seed/sign1/800/600',
-    imageHint: 'stop sign broken'
-  },
-  {
-    id: 'CIV-008',
-    category: 'Fallen Tree',
-    description: 'A large tree has fallen and is blocking a residential street.',
-    location: { address: 'Civil Lines, Nagpur', lat: 21.1594, lng: 79.0776 },
-    status: 'Approved',
-    priority: 'High',
-    reportedAt: '2024-07-22T20:00:00Z',
-    citizen: { name: 'Maria Rodriguez', contact: 'maria.r@email.com' },
-    imageUrl: 'https://picsum.photos/seed/tree1/800/600',
-    imageHint: 'tree fallen road'
-  },
-  {
-    id: 'CIV-009',
-    category: 'Public Nuisance',
-    description: 'Loud music from a commercial establishment late at night.',
-    location: { address: 'Andheri, Mumbai', lat: 19.1136, lng: 72.8697 },
-    status: 'Rejected',
-    priority: 'Low',
-    reportedAt: '2024-07-20T23:30:00Z',
-    citizen: { name: 'Chris Lee', contact: 'chris.l@email.com' },
-    imageUrl: 'https://picsum.photos/seed/nuisance1/800/600',
-    imageHint: 'loud music'
-  },
-  {
-    id: 'CIV-010',
-    category: 'Water Stagnation',
-    description: 'Stagnant water in an open drain, potential mosquito breeding ground.',
-    location: { address: 'Manewada, Nagpur', lat: 21.1097, lng: 79.0983 },
-    status: 'Assigned',
-    priority: 'Medium',
-    reportedAt: '2024-07-23T09:20:00Z',
-    assignedTo: 'Public Works Dept.',
-    citizen: { name: 'Sarah Miller', contact: 'sarah.m@email.com' },
-    imageUrl: 'https://picsum.photos/seed/water2/800/600',
-    imageHint: 'stagnant water'
-  },
-  {
-    id: 'CIV-011',
-    category: 'Pothole',
-    description: 'A very deep pothole is a major hazard on the main road.',
-    location: { address: 'Wardha Road, Nagpur', lat: 21.1045, lng: 79.0772 },
-    status: 'Approved',
-    priority: 'High',
-    reportedAt: '2024-07-24T08:00:00Z',
-    citizen: { name: 'Anjali Sharma', contact: 'anjali.s@email.com' },
-    imageUrl: 'https://picsum.photos/seed/pothole3/800/600',
-    imageHint: 'deep pothole'
-  },
-  {
-    id: 'CIV-012',
-    category: 'Garbage',
-    description: 'Uncollected garbage bags are attracting stray animals.',
-    location: { address: 'Viman Nagar, Pune', lat: 18.5677, lng: 73.9143 },
-    status: 'Pending',
-    priority: 'Medium',
-    reportedAt: '2024-07-24T10:30:00Z',
-    citizen: { name: 'Rohan Gupta', contact: 'rohan.g@email.com' },
-    imageUrl: 'https://picsum.photos/seed/garbage3/800/600',
-    imageHint: 'garbage bags'
-  },
-  {
-    id: 'CIV-013',
-    category: 'Streetlight Outage',
-    description: 'Entire street is dark due to multiple streetlight outages.',
-    location: { address: 'Juhu, Mumbai', lat: 19.0886, lng: 72.8275 },
-    status: 'Assigned',
-    priority: 'High',
-    reportedAt: '2024-07-23T21:00:00Z',
-    assignedTo: 'Electricity Dept.',
-    citizen: { name: 'Priya Singh', contact: 'priya.s@email.com' },
-    imageUrl: 'https://picsum.photos/seed/light2/800/600',
-    imageHint: 'dark street'
-  },
-  {
-    id: 'CIV-014',
-    category: 'Water Leakage',
-    description: 'Minor drip from a public water tap, but constant.',
-    location: { address: 'Shivaji Nagar, Pune', lat: 18.5324, lng: 73.8452 },
-    status: 'Resolved',
-    priority: 'Low',
-    reportedAt: '2024-07-15T12:00:00Z',
-    resolvedAt: '2024-07-16T10:00:00Z',
-    assignedTo: 'Water Dept.',
-    citizen: { name: 'Amit Patel', contact: 'amit.p@email.com' },
-    imageUrl: 'https://picsum.photos/seed/water3/800/600',
-    imageHint: 'tap dripping',
-    proofUrl: 'https://picsum.photos/seed/proof2/800/600',
-    proofHint: 'tap fixed'
-  },
-  {
-    id: 'CIV-015',
-    category: 'Broken Signage',
-    description: 'Name of the street sign is illegible due to fading.',
-    location: { address: 'Sadar, Nagpur', lat: 21.1601, lng: 79.0863 },
-    status: 'Approved',
-    priority: 'Low',
-    reportedAt: '2024-07-19T15:00:00Z',
-    citizen: { name: 'Fatima Khan', contact: 'fatima.k@email.com' },
-    imageUrl: 'https://picsum.photos/seed/sign2/800/600',
-    imageHint: 'faded sign'
-  },
-  {
-    id: 'CIV-016',
-    category: 'Illegal Parking',
-    description: 'Cars consistently parked in a no-parking zone, blocking traffic.',
-    location: { address: 'Colaba, Mumbai', lat: 18.9161, lng: 72.8228 },
-    status: 'Pending',
-    priority: 'Medium',
-    reportedAt: '2024-07-24T11:45:00Z',
-    citizen: { name: 'Vikram Singh', contact: 'vikram.s@email.com' },
-    imageUrl: 'https://picsum.photos/seed/parking1/800/600',
-    imageHint: 'cars parked'
-  },
-  {
-    id: 'CIV-017',
-    category: 'Fallen Tree',
-    description: 'Small tree branch fell on the sidewalk, minor obstruction.',
-    location: { address: 'Aundh, Pune', lat: 18.5626, lng: 73.8055 },
-    status: 'Resolved',
-    priority: 'Low',
-    reportedAt: '2024-07-22T13:00:00Z',
-    resolvedAt: '2024-07-22T16:00:00Z',
-    assignedTo: 'Public Works Dept.',
-    citizen: { name: 'Sneha Reddy', contact: 'sneha.r@email.com' },
-    imageUrl: 'https://picsum.photos/seed/tree2/800/600',
-    imageHint: 'tree branch sidewalk',
-    proofUrl: 'https://picsum.photos/seed/proof3/800/600',
-    proofHint: 'sidewalk clear'
+    const placeholderIssues = _getIssues();
+    
+    // Combine and remove duplicates, giving preference to real issues
+    const combined = [...mappedIssues, ...placeholderIssues];
+    const uniqueIssues = combined.filter((v,i,a)=>a.findIndex(t=>(t.id === v.id))===i)
+    
+    return uniqueIssues;
+
+  } catch (error) {
+    console.error("Error fetching issues from DB, falling back to placeholder data:", error);
+    return _getIssues();
   }
-];
-
-// Functions to interact with the mock database
-export const getIssues = () => issues;
-
-export const getUsers = () => users;
-
-export const updateIssue = (id: string, updates: Partial<Issue>) => {
-    const issueIndex = issues.findIndex(i => i.id === id);
-    if (issueIndex !== -1) {
-        issues[issueIndex] = { ...issues[issueIndex], ...updates };
-        return issues[issueIndex];
-    }
-    return null;
 }
 
-export const updateMultipleIssues = (updates: (Partial<Issue> & {id: string})[]) => {
-    updates.forEach(update => {
-        const issueIndex = issues.findIndex(i => i.id === update.id);
-        if (issueIndex !== -1) {
-            issues[issueIndex] = { ...issues[issueIndex], ...update };
+export async function getUsers(): Promise<User[]> {
+   try {
+    await dbConnect();
+    const realUsers = await UserModel.find({}).lean();
+
+    const mappedUsers = realUsers.map(user => ({
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role || 'Citizen',
+      avatarUrl: user.faceImageUrl || `https://i.pravatar.cc/150?u=${user.email}`,
+      department: user.department,
+    }));
+    
+    const placeholderUsers = _getUsers();
+
+    const combined = [...mappedUsers, ...placeholderUsers];
+    const uniqueUsers = combined.filter((v,i,a)=>a.findIndex(t=>(t.id === v.id))===i)
+    
+    return uniqueUsers;
+
+  } catch (error) {
+    console.error("Error fetching users from DB, falling back to placeholder data:", error);
+    return _getUsers();
+  }
+}
+
+export async function updateIssue(id: string, updates: Partial<Issue>) {
+    try {
+        await dbConnect();
+
+        const updateOp: any = { $set: {} };
+        const issueToUpdate = await IssueModel.findById(id);
+
+        if (!issueToUpdate) {
+            console.error(`Issue with id ${id} not found in DB`);
+            return null;
         }
-    });
-    return issues;
+
+        for (const key in updates) {
+            const typedKey = key as keyof Issue;
+            if (typedKey === 'status') {
+                updateOp.$set.status = updates.status;
+                // Add to status history if it's a valid status change
+                if (issueToUpdate.status !== updates.status) {
+                    updateOp.$push = { statusHistory: { status: updates.status, date: new Date() } };
+                }
+            } else if (typedKey === 'priority' || typedKey === 'assignedTo' || typedKey === 'resolvedAt') {
+                 updateOp.$set[key] = updates[typedKey];
+            }
+        }
+        
+        if (Object.keys(updateOp.$set).length > 0) {
+            const updatedIssue = await IssueModel.findByIdAndUpdate(id, updateOp, { new: true }).lean();
+            return updatedIssue;
+        }
+        return issueToUpdate;
+
+    } catch (error) {
+        console.error(`Failed to update issue ${id} in DB:`, error);
+        // Fallback to placeholder update logic if needed, or just throw
+        throw error;
+    }
+}
+
+export async function updateMultipleIssues(updates: (Partial<Issue> & {id: string})[]) {
+    try {
+        await dbConnect();
+        const bulkOps = updates.map(update => {
+            const { id, ...updateData } = update;
+            const updateOp: any = { $set: {} };
+            if (updateData.status) {
+                 updateOp.$set.status = updateData.status;
+                 updateOp.$push = { statusHistory: { status: updateData.status, date: new Date() } };
+            }
+             if (updateData.priority) updateOp.$set.priority = updateData.priority;
+             if (updateData.assignedTo) updateOp.$set.assignedTo = updateData.assignedTo;
+
+            return {
+                updateOne: {
+                    filter: { _id: id },
+                    update: updateOp
+                }
+            };
+        });
+
+        if (bulkOps.length > 0) {
+            await IssueModel.bulkWrite(bulkOps);
+        }
+        return await getIssues();
+
+    } catch (error) {
+        console.error('Failed to bulk update issues in DB:', error);
+        throw error;
+    }
 }
