@@ -15,7 +15,7 @@ import { IssuesByCategoryChart } from '@/components/dashboard/issues-by-category
 import { RecentIssues } from '@/components/dashboard/recent-issues';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapProvider } from '@/components/map/map-provider';
-import { IssueMapOverview } from '@/components/dashboard/issue-map-overview';
+import { HighPriorityMap } from '@/components/dashboard/high-priority-map';
 import { IssuesByStatusChart } from '@/components/dashboard/issues-by-status-chart';
 import { IssuesByPriorityChart } from '@/components/dashboard/issues-by-priority-chart';
 import { IssuesOverTimeChart } from '@/components/dashboard/issues-over-time-chart';
@@ -128,7 +128,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <MapProvider>
-              <IssueMapOverview issues={issues}/>
+              <HighPriorityMap issues={issues}/>
             </MapProvider>
           </CardContent>
         </Card>
