@@ -29,7 +29,7 @@ export async function getIssues(): Promise<Issue[]> {
       }
       
       let status = capitalize(issue.status || 'pending');
-      if (status === 'Inprogress') { // Match "inProgress" from DB
+      if (issue.status === 'inProgress') { // Match "inProgress" from DB
         status = 'Assigned';
       }
 
@@ -113,8 +113,8 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         }
         
         const updateOp: any = {};
-        const setOnInsert: any = {};
-
+        
+        // Handle status separately
         if (updates.status) {
             let newStatus = updates.status as string;
             // Map "Assigned" from dashboard to "inProgress" for the database
@@ -122,17 +122,16 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
                 newStatus = 'inProgress';
             }
             
-            // Only update if status is different
             const currentStatus = (issueToUpdate.status || 'pending').toLowerCase();
             if (newStatus.toLowerCase() !== currentStatus) {
-                updateOp.$set = { ...(updateOp.$set || {}), status: newStatus.toLowerCase() };
+                if (!updateOp.$set) updateOp.$set = {};
+                updateOp.$set.status = newStatus;
                 
-                // Ensure statusHistory is an array before pushing
-                const statusHistory = Array.isArray(issueToUpdate.statusHistory) ? issueToUpdate.statusHistory : [];
-                const newHistoryEntry = { status: newStatus.toLowerCase(), date: new Date() };
+                const newHistoryEntry = { status: newStatus, date: new Date() };
 
                 // Atomically add to statusHistory array
-                updateOp.$push = { ...(updateOp.$push || {}), statusHistory: newHistoryEntry };
+                if (!updateOp.$push) updateOp.$push = {};
+                updateOp.$push.statusHistory = newHistoryEntry;
             }
         }
         
@@ -140,9 +139,10 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         for (const key in updates) {
             const typedKey = key as keyof Issue;
             if (typedKey !== 'status' && typedKey !== 'id') {
-                if (updates[typedKey] !== undefined) {
+                const value = (updates as any)[typedKey];
+                if (value !== undefined) {
                     if (!updateOp.$set) updateOp.$set = {};
-                    (updateOp.$set as any)[typedKey] = (updates as any)[typedKey];
+                    (updateOp.$set as any)[typedKey] = value;
                 }
             }
         }
@@ -174,8 +174,8 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
                 if (newStatus === 'Assigned') {
                     newStatus = 'inProgress';
                 }
-                 setOp.status = newStatus.toLowerCase();
-                 pushOp.statusHistory = { status: newStatus.toLowerCase(), date: new Date() };
+                 setOp.status = newStatus;
+                 pushOp.statusHistory = { status: newStatus, date: new Date() };
             }
              if (updateData.priority) setOp.priority = updateData.priority;
              if (updateData.assignedTo) setOp.assignedTo = updateData.assignedTo;

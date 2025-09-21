@@ -71,7 +71,7 @@ export default function IssueDetailPage() {
       const response = await fetch(`/api/issues`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates }),
+        body: JSON.stringify([{ id, ...updates }]),
       });
 
       if (!response.ok) {

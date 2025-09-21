@@ -36,4 +36,3 @@ export function IssueDetailMap({issue}: {issue: Issue}) {
         </div>
     );
 }
-
