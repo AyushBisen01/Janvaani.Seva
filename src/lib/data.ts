@@ -8,6 +8,8 @@ import IssueModel from '@/lib/models/Issue';
 import UserModel from '@/lib/models/User';
 import {_getUsers, _getIssues} from '@/lib/placeholder-data'
 
+// Helper to capitalize first letter
+const capitalize = (s: string) => s && s.charAt(0).toUpperCase() + s.slice(1);
 
 // Functions to interact with the real database
 export async function getIssues(): Promise<Issue[]> {
@@ -25,7 +27,7 @@ export async function getIssues(): Promise<Issue[]> {
         lat: issue.coordinates?.latitude || 0,
         lng: issue.coordinates?.longitude || 0,
       },
-      status: issue.status as any,
+      status: capitalize(issue.status) as any, // Capitalize status
       priority: issue.priority || 'Medium',
       reportedAt: issue.createdAt,
       resolvedAt: issue.resolvedAt,
@@ -38,7 +40,9 @@ export async function getIssues(): Promise<Issue[]> {
       imageHint: issue.title, // Use title as a hint
       proofUrl: issue.proofUrl,
       proofHint: issue.proofHint,
-      statusHistory: issue.statusHistory || [{ status: issue.status, date: issue.createdAt }]
+      statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
+        ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
+        : [{ status: capitalize(issue.status), date: issue.createdAt }]
     }));
 
     const placeholderIssues = _getIssues();
@@ -92,34 +96,27 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         }
         
         const updateOp: any = { $set: {} };
-        let statusChanged = false;
 
-        // Process all updates
+        // Handle status change and history
+        if (updates.status && updates.status.toLowerCase() !== issueToUpdate.status.toLowerCase()) {
+            const newStatus = updates.status.toLowerCase();
+            updateOp.$set.status = newStatus;
+            updateOp.$push = { statusHistory: { status: newStatus, date: new Date() } };
+        }
+
+        // Handle other fields
         for (const key in updates) {
             const typedKey = key as keyof Issue;
-            
-            if (typedKey === 'status') {
-                if (issueToUpdate.status !== updates.status) {
-                    statusChanged = true;
-                    updateOp.$set.status = updates.status;
-                }
-            } else if (typedKey === 'priority' || typedKey === 'assignedTo' || typedKey === 'resolvedAt') {
+            if (typedKey !== 'status' && typedKey !== 'id') {
                  updateOp.$set[key] = updates[typedKey];
             }
         }
         
-        // If status changed, push to history
-        if (statusChanged) {
-            updateOp.$push = { statusHistory: { status: updates.status, date: new Date() } };
-        }
-        
-        // Only perform update if there's something to change
-        if (Object.keys(updateOp.$set).length > 0 || statusChanged) {
-            const updatedIssue = await IssueModel.findByIdAndUpdate(id, updateOp, { new: true }).lean();
-            return updatedIssue;
+        if (Object.keys(updateOp.$set).length > 0) {
+            await IssueModel.findByIdAndUpdate(id, updateOp, { new: true }).lean();
         }
 
-        return issueToUpdate.toObject();
+        return await getIssues();
 
     } catch (error) {
         console.error(`Failed to update issue ${id} in DB:`, error);
@@ -136,11 +133,10 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             const { id, ...updateData } = update;
             const updateOp: any = { $set: {} };
             
-            // This logic assumes bulk updates are primarily for status, priority, and assignment
             if (updateData.status) {
-                 updateOp.$set.status = updateData.status;
-                 // Add to statusHistory when status changes
-                 updateOp.$push = { statusHistory: { status: updateData.status, date: new Date() } };
+                 const newStatus = updateData.status.toLowerCase();
+                 updateOp.$set.status = newStatus;
+                 updateOp.$push = { statusHistory: { status: newStatus, date: new Date() } };
             }
              if (updateData.priority) updateOp.$set.priority = updateData.priority;
              if (updateData.assignedTo) updateOp.$set.assignedTo = updateData.assignedTo;

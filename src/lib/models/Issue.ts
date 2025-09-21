@@ -32,7 +32,7 @@ const IssueSchema: Schema<IIssue> = new Schema({
     latitude: Number,
     longitude: Number,
   },
-  status: { type: String, default: 'Pending' },
+  status: { type: String, default: 'pending' },
   priority: { type: String, enum: ['High', 'Medium', 'Low'], default: 'Medium' },
   imageUrl: String,
   submittedBy: String,
@@ -41,12 +41,7 @@ const IssueSchema: Schema<IIssue> = new Schema({
         status: String,
         date: Date
     }],
-    default: function(this: IIssue) {
-        if (this.isNew) {
-            return [{ status: this.status, date: new Date() }];
-        }
-        return [];
-    }
+    default: []
   },
   assignedTo: String,
   resolvedAt: Date,
