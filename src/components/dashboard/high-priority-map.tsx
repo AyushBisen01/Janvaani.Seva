@@ -118,58 +118,57 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
 
 
     return (
-        <div className="h-[400px] w-full rounded-lg border">
-            <Map
-                center={center}
-                defaultZoom={7}
-                gestureHandling={'greedy'}
-                disableDefaultUI={false}
-                mapId={'a2a2153c3143f605'}
-                fullscreenControl={true}
-                rotateControl={true}
-            >
-                {issues.map((issue) => (
-                     <AdvancedMarker 
-                        key={issue.id} 
-                        position={issue.location} 
-                        onClick={() => setSelectedIssue(issue)}
-                    >
-                         <MapPin className={cn("h-8 w-8 drop-shadow-lg", statusColors[issue.status])} />
-                    </AdvancedMarker>
-                ))}
+        <Map
+            className="h-[400px] w-full rounded-lg border"
+            center={center}
+            defaultZoom={7}
+            gestureHandling={'greedy'}
+            disableDefaultUI={false}
+            mapId={'a2a2153c3143f605'}
+            fullscreenControl={true}
+            rotateControl={true}
+        >
+            {issues.map((issue) => (
+                 <AdvancedMarker 
+                    key={issue.id} 
+                    position={issue.location} 
+                    onClick={() => setSelectedIssue(issue)}
+                >
+                     <MapPin className={cn("h-8 w-8 drop-shadow-lg", statusColors[issue.status])} />
+                </AdvancedMarker>
+            ))}
 
-                {highPriorityZones.map((zone, index) => (
-                     <MapCircle
-                        key={index}
-                        center={zone}
-                        radius={10000} // 10km
-                        strokeColor="#FF0000"
-                        strokeOpacity={0.8}
-                        strokeWeight={2}
-                        fillColor="#FF0000"
-                        fillOpacity={0.15}
-                    />
-                ))}
+            {highPriorityZones.map((zone, index) => (
+                 <MapCircle
+                    key={index}
+                    center={zone}
+                    radius={10000} // 10km
+                    strokeColor="#FF0000"
+                    strokeOpacity={0.8}
+                    strokeWeight={2}
+                    fillColor="#FF0000"
+                    fillOpacity={0.15}
+                />
+            ))}
 
-                {selectedIssue && (
-                    <InfoWindow position={selectedIssue.location} onCloseClick={() => setSelectedIssue(null)}>
-                        <div className="p-2 max-w-xs">
-                            <div className="flex justify-between items-start">
-                                <h3 className="font-bold text-lg mb-1">{selectedIssue.category}</h3>
-                                <button onClick={() => setSelectedIssue(null)} className="p-1 -mr-2 -mt-2"><X className="h-4 w-4" /></button>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{selectedIssue.location.address}</p>
-                            <p className="mt-2 text-sm">{selectedIssue.description}</p>
-                            <div className="flex justify-between items-center mt-3">
-                                <Badge className={cn(statusBadgeColors[selectedIssue.status])} variant="outline">{selectedIssue.status}</Badge>
-                                <Button asChild variant="link" size="sm" className="p-0 h-auto">
-                                    <Link href={`/issues/${selectedIssue.id}`}>View Details</Link>
-                                </Button>
-                            </div>
+            {selectedIssue && (
+                <InfoWindow position={selectedIssue.location} onCloseClick={() => setSelectedIssue(null)}>
+                    <div className="p-2 max-w-xs">
+                        <div className="flex justify-between items-start">
+                            <h3 className="font-bold text-lg mb-1">{selectedIssue.category}</h3>
+                            <button onClick={() => setSelectedIssue(null)} className="p-1 -mr-2 -mt-2"><X className="h-4 w-4" /></button>
                         </div>
-                    </InfoWindow>
-                )}
-            </Map>
-        </div>
+                        <p className="text-sm text-muted-foreground">{selectedIssue.location.address}</p>
+                        <p className="mt-2 text-sm">{selectedIssue.description}</p>
+                        <div className="flex justify-between items-center mt-3">
+                            <Badge className={cn(statusBadgeColors[selectedIssue.status])} variant="outline">{selectedIssue.status}</Badge>
+                            <Button asChild variant="link" size="sm" className="p-0 h-auto">
+                                <Link href={`/issues/${selectedIssue.id}`}>View Details</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </InfoWindow>
+            )}
+        </Map>
     );
 }
