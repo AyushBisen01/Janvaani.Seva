@@ -116,14 +116,14 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         
         // Handle status separately
         if (updates.status) {
-            let newStatus = updates.status as string;
+            let newStatus = updates.status.toLowerCase();
             // Map "Assigned" from dashboard to "inProgress" for the database
-            if (newStatus === 'Assigned') {
+            if (newStatus === 'assigned') {
                 newStatus = 'inProgress';
             }
             
             const currentStatus = (issueToUpdate.status || 'pending').toLowerCase();
-            if (newStatus.toLowerCase() !== currentStatus) {
+            if (newStatus !== currentStatus) {
                 if (!updateOp.$set) updateOp.$set = {};
                 updateOp.$set.status = newStatus;
                 
@@ -169,9 +169,9 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             const pushOp: any = {};
             
             if (updateData.status) {
-                let newStatus = updateData.status;
+                let newStatus = updateData.status.toLowerCase();
                  // Map "Assigned" from dashboard to "inProgress" for the database
-                if (newStatus === 'Assigned') {
+                if (newStatus === 'assigned') {
                     newStatus = 'inProgress';
                 }
                  setOp.status = newStatus;
