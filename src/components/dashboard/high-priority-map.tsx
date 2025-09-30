@@ -68,21 +68,6 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
         }
     }, [selectedIssue, map]);
 
-     const center = React.useMemo(() => {
-        if (issues.length === 0) {
-            return { lat: 19.7515, lng: 75.7139 }; // Maharashtra
-        }
-        const { lat, lng } = issues.reduce(
-            (acc, issue) => {
-                acc.lat += issue.location.lat;
-                acc.lng += issue.location.lng;
-                return acc;
-            },
-            { lat: 0, lng: 0 }
-        );
-        return { lat: lat / issues.length, lng: lng / issues.length };
-    }, [issues]);
-
     const highPriorityZones = React.useMemo(() => {
         const highPriorityIssues = issues.filter(i => i.priority === 'High' && i.status !== 'Resolved');
         const clusters = [];
@@ -120,8 +105,8 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
     return (
         <Map
             className="h-[400px] w-full rounded-lg border"
-            center={center}
-            defaultZoom={7}
+            defaultCenter={{ lat: 20.5937, lng: 78.9629 }}
+            defaultZoom={5}
             gestureHandling={'greedy'}
             disableDefaultUI={false}
             mapId={'a2a2153c3143f605'}
