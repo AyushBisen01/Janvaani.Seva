@@ -17,16 +17,27 @@ export async function getIssues(): Promise<Issue[]> {
     await dbConnect();
     const realIssues = await IssueModel.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).lean();
     
-    // Fetch the latest detection
-    const latestDetection = await DetectionModel.findOne({}).sort({ createdAt: -1 }).lean();
+    // Fetch all recent detections and create a map for efficient lookup
+    const allDetections = await DetectionModel.find({}).sort({ createdAt: -1 }).lean();
+    const detectionMap = new Map<number, string>();
+    allDetections.forEach(detection => {
+      if (detection.annotatedImageUrl) {
+        // Round timestamp to the nearest second to account for small time differences
+        const detectionTime = Math.round(new Date(detection.createdAt).getTime() / 1000);
+        if (!detectionMap.has(detectionTime)) {
+            detectionMap.set(detectionTime, detection.annotatedImageUrl);
+        }
+      }
+    });
 
     // Map database documents to the Issue type
-    const mappedIssues = realIssues.map((issue, index) => {
-      // For the most recent issue, replace its imageUrl with the annotated one
-      let imageUrl = issue.imageUrl;
-      if (index === 0 && latestDetection && latestDetection.annotatedImageUrl) {
-        imageUrl = latestDetection.annotatedImageUrl;
-      }
+    const mappedIssues = realIssues.map((issue) => {
+      const issueTime = Math.round(new Date(issue.createdAt).getTime() / 1000);
+      // Find a matching detection URL from the map, allowing for a small time window
+      let imageUrl = detectionMap.get(issueTime) || 
+                     detectionMap.get(issueTime - 1) || 
+                     detectionMap.get(issueTime + 1) || 
+                     issue.imageUrl;
       
       let status = capitalize(issue.status || 'pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB
