@@ -263,7 +263,7 @@ export default function IssueDetailPage() {
                 <div className="h-[450px] flex items-center justify-center bg-muted rounded-lg">
                   <div className="text-center text-muted-foreground">
                     <ImageIcon className="mx-auto h-12 w-12" />
-                    <p className="mt-2 text-sm">Image not available.</p>
+                    <p className="mt-2 text-sm">Annotated image not available.</p>
                   </div>
                 </div>
               )}
@@ -308,3 +308,5 @@ export default function IssueDetailPage() {
     </>
   );
 }
+
+    

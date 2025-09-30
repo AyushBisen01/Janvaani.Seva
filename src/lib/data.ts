@@ -15,10 +15,14 @@ const capitalize = (s: string) => s && s.charAt(0).toUpperCase() + s.slice(1);
 export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
-    const realIssues = await IssueModel.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).lean();
     
-    // Fetch all recent detections and create a map for efficient lookup by issue ID
-    const allDetections = await DetectionModel.find({}).lean();
+    // Fetch all issues and all detections in parallel
+    const [realIssues, allDetections] = await Promise.all([
+        IssueModel.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).lean(),
+        DetectionModel.find({}).lean()
+    ]);
+
+    // Create a map for efficient lookup of annotated images by issue ID
     const detectionMap = new Map<string, string>();
     allDetections.forEach(detection => {
       if (detection.issueId && detection.annotatedImageUrl) {
@@ -30,6 +34,7 @@ export async function getIssues(): Promise<Issue[]> {
     const mappedIssues = realIssues.map((issue) => {
       const issueIdString = issue._id.toString();
       
+      // ONLY use the annotatedImageUrl. If not present, imageUrl will be an empty string.
       const annotatedImageUrl = detectionMap.get(issueIdString) || '';
       
       let status = capitalize(issue.status || 'pending');
@@ -55,7 +60,7 @@ export async function getIssues(): Promise<Issue[]> {
           name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
           contact: (issue.userId as any)?.email || 'N/A',
         },
-        imageUrl: annotatedImageUrl, // Only use the annotated image URL
+        imageUrl: annotatedImageUrl, // This will be the annotated URL or an empty string
         imageHint: issue.title, // Use title as a hint
         proofUrl: issue.proofUrl,
         proofHint: issue.proofHint,
@@ -207,3 +212,5 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
+
+    
