@@ -70,40 +70,59 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
 
     const highPriorityZones = React.useMemo(() => {
         const highPriorityIssues = issues.filter(i => i.priority === 'High' && i.status !== 'Resolved' && i.status !== 'Rejected');
-        const clusters: {lat: number, lng: number}[] = [];
+        const clusters: { center: { lat: number, lng: number }, radius: number }[] = [];
         let visited = new Set<string>();
+        const CLUSTER_RADIUS_METERS = 5000; // 5km radius for clustering
 
-        function findNeighbors(issue: Issue, currentCluster: Issue[]) {
+        highPriorityIssues.forEach(issue => {
+            if (visited.has(issue.id)) {
+                return;
+            }
+
+            const currentCluster: Issue[] = [];
+            const queue = [issue];
             visited.add(issue.id);
-            currentCluster.push(issue);
 
-            for (const otherIssue of highPriorityIssues) {
-                if (!visited.has(otherIssue.id)) {
-                    if (haversineDistance(issue.location, otherIssue.location) < 50000) { // 50km radius
-                        findNeighbors(otherIssue, currentCluster);
+            while (queue.length > 0) {
+                const currentIssue = queue.shift()!;
+                currentCluster.push(currentIssue);
+
+                highPriorityIssues.forEach(otherIssue => {
+                    if (!visited.has(otherIssue.id)) {
+                        if (haversineDistance(currentIssue.location, otherIssue.location) < CLUSTER_RADIUS_METERS) {
+                            visited.add(otherIssue.id);
+                            queue.push(otherIssue);
+                        }
                     }
-                }
+                });
             }
-        }
 
-        for (const issue of highPriorityIssues) {
-            if (!visited.has(issue.id)) {
-                const currentCluster: Issue[] = [];
-                findNeighbors(issue, currentCluster);
+            if (currentCluster.length > 1) {
+                // Calculate centroid of the cluster
+                const center = currentCluster.reduce((acc, i) => {
+                    acc.lat += i.location.lat;
+                    acc.lng += i.location.lng;
+                    return acc;
+                }, { lat: 0, lng: 0 });
+                center.lat /= currentCluster.length;
+                center.lng /= currentCluster.length;
 
-                if (currentCluster.length > 1) {
-                    const clusterCenter = currentCluster.reduce((acc, i) => {
-                        acc.lat += i.location.lat;
-                        acc.lng += i.location.lng;
-                        return acc;
-                    }, {lat: 0, lng: 0});
+                // Calculate the radius to encompass all points in the cluster
+                let radius = 0;
+                currentCluster.forEach(i => {
+                    const distance = haversineDistance(center, i.location);
+                    if (distance > radius) {
+                        radius = distance;
+                    }
+                });
+                
+                // Add a small buffer to the radius
+                radius += 500; 
 
-                    clusterCenter.lat /= currentCluster.length;
-                    clusterCenter.lng /= currentCluster.length;
-                    clusters.push(clusterCenter);
-                }
+                clusters.push({ center, radius });
             }
-        }
+        });
+
         return clusters;
     }, [issues]);
 
@@ -132,8 +151,8 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
             {highPriorityZones.map((zone, index) => (
                  <MapCircle
                     key={index}
-                    center={zone}
-                    radius={50000} // 50km
+                    center={zone.center}
+                    radius={zone.radius}
                     strokeColor="#FF0000"
                     strokeOpacity={0.8}
                     strokeWeight={2}
@@ -148,13 +167,14 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
                         <div className="flex justify-between items-start">
                             <h3 className="font-bold text-lg mb-1">{selectedIssue.category}</h3>
                             <button onClick={() => setSelectedIssue(null)} className="p-1 -mr-2 -mt-2"><X className="h-4 w-4" /></button>
+
                         </div>
                         <p className="text-sm text-muted-foreground">{selectedIssue.location.address}</p>
                         <p className="mt-2 text-sm">{selectedIssue.description}</p>
                         <div className="flex justify-between items-center mt-3">
                             <Badge className={cn(statusBadgeColors[selectedIssue.status])} variant="outline">{selectedIssue.status}</Badge>
                             <Button asChild variant="link" size="sm" className="p-0 h-auto">
-                                <Link href={`/issues/${selected.id}`}>View Details</Link>
+                                <Link href={`/issues/${selectedIssue.id}`}>View Details</Link>
                             </Button>
                         </div>
                     </div>
