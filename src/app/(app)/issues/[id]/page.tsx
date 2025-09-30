@@ -25,6 +25,7 @@ import {
   HardHat,
   Clock,
   MessageSquare,
+  ImageIcon,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { MapProvider } from '@/components/map/map-provider';
@@ -247,14 +248,23 @@ export default function IssueDetailPage() {
               <CardTitle className="font-headline">Issue Media</CardTitle>
             </CardHeader>
             <CardContent>
-              <Image
-                src={issue.imageUrl}
-                alt={issue.category}
-                width={800}
-                height={600}
-                className="rounded-lg object-cover"
-                data-ai-hint={issue.imageHint}
-              />
+              {issue.imageUrl ? (
+                <Image
+                  src={issue.imageUrl}
+                  alt={issue.category}
+                  width={800}
+                  height={600}
+                  className="rounded-lg object-cover"
+                  data-ai-hint={issue.imageHint}
+                />
+              ) : (
+                <div className="h-[450px] flex items-center justify-center bg-muted rounded-lg">
+                  <div className="text-center text-muted-foreground">
+                    <ImageIcon className="mx-auto h-12 w-12" />
+                    <p className="mt-2 text-sm">Annotated image not available.</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
           {issue.proofUrl && issue.resolvedAt && (
