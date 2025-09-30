@@ -107,6 +107,7 @@ function TriageDataTable({
                     width={64}
                     height={64}
                     className="rounded-md object-cover"
+                    data-ai-hint={issue.imageHint}
                   />
                 ) : (
                   <div className="h-16 w-16 flex items-center justify-center bg-muted rounded-md">
