@@ -152,7 +152,7 @@ export default function IssueDetailPage() {
     { icon: User, label: 'Citizen', value: `${issue.citizen.name} (${issue.citizen.contact})` },
   ];
 
-  const displayImageUrl = issue.annotatedImageUrl || issue.imageUrl;
+  const displayImageUrl = issue.imageUrl;
 
   return (
     <>

@@ -84,7 +84,7 @@ function TriageDataTable({
         </TableHeader>
         <TableBody>
           {issues.map((issue) => {
-            const displayImageUrl = issue.annotatedImageUrl || issue.imageUrl;
+            const displayImageUrl = issue.imageUrl;
             return (
             <TableRow key={issue.id} data-state={selectedIssues.includes(issue.id) ? 'selected' : ''}>
               <TableCell>
