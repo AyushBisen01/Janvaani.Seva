@@ -72,6 +72,7 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
         const activeIssues = issues.filter(i => i.status !== 'Resolved' && i.status !== 'Rejected');
         const highPriorityIssues = activeIssues.filter(i => i.priority === 'High');
         const mediumPriorityIssues = activeIssues.filter(i => i.priority === 'Medium');
+        const lowPriorityIssues = activeIssues.filter(i => i.priority === 'Low');
         
         const clusters: { center: { lat: number, lng: number }, radius: number }[] = [];
         const CLUSTER_RADIUS_METERS = 5000; // 5km radius for clustering
@@ -122,6 +123,7 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
 
         findClusters(highPriorityIssues, 2); // 2 or more for High priority
         findClusters(mediumPriorityIssues, 4); // 4 or more for Medium priority
+        findClusters(lowPriorityIssues, 10); // 10 or more for Low priority
 
         return clusters;
     }, [issues]);
