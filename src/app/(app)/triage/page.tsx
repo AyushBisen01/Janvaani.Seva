@@ -29,6 +29,7 @@ import {
   Send,
   Eye,
   MoreHorizontal,
+  ImageIcon,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -97,13 +98,19 @@ function TriageDataTable({
                 </div>
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                <Image
-                  src={issue.imageUrl}
-                  alt={issue.category}
-                  width={64}
-                  height={64}
-                  className="rounded-md object-cover"
-                />
+                {issue.imageUrl ? (
+                  <Image
+                    src={issue.imageUrl}
+                    alt={issue.category}
+                    width={64}
+                    height={64}
+                    className="rounded-md object-cover"
+                  />
+                ) : (
+                  <div className="h-16 w-16 flex items-center justify-center bg-muted rounded-md">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
               </TableCell>
               <TableCell className="hidden md:table-cell">
                 {formatDistanceToNow(new Date(issue.reportedAt), { addSuffix: true })}
