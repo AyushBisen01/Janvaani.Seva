@@ -70,7 +70,13 @@ export async function getIssues(): Promise<Issue[]> {
       };
     });
 
-    const placeholderIssues = _getIssues();
+    const placeholderIssues = _getIssues().map(issue => {
+        const annotatedImageUrl = annotatedImageMap.get(issue.id) || '';
+        return {
+            ...issue,
+            imageUrl: annotatedImageUrl,
+        }
+    });
     
     // Combine and remove duplicates, giving preference to real issues
     const combined = [...mappedIssues, ...placeholderIssues];
