@@ -68,60 +68,60 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
         }
     }, [selectedIssue, map]);
 
-    const highPriorityZones = React.useMemo(() => {
-        const highPriorityIssues = issues.filter(i => i.priority === 'High' && i.status !== 'Resolved' && i.status !== 'Rejected');
+    const hotspotZones = React.useMemo(() => {
+        const activeIssues = issues.filter(i => i.status !== 'Resolved' && i.status !== 'Rejected');
+        const highPriorityIssues = activeIssues.filter(i => i.priority === 'High');
+        const mediumPriorityIssues = activeIssues.filter(i => i.priority === 'Medium');
+        
         const clusters: { center: { lat: number, lng: number }, radius: number }[] = [];
-        let visited = new Set<string>();
         const CLUSTER_RADIUS_METERS = 5000; // 5km radius for clustering
 
-        highPriorityIssues.forEach(issue => {
-            if (visited.has(issue.id)) {
-                return;
-            }
+        const findClusters = (issueList: Issue[], minClusterSize: number) => {
+            let visited = new Set<string>();
 
-            const currentCluster: Issue[] = [];
-            const queue = [issue];
-            visited.add(issue.id);
+            issueList.forEach(issue => {
+                if (visited.has(issue.id)) return;
 
-            while (queue.length > 0) {
-                const currentIssue = queue.shift()!;
-                currentCluster.push(currentIssue);
+                const currentCluster: Issue[] = [];
+                const queue = [issue];
+                visited.add(issue.id);
 
-                highPriorityIssues.forEach(otherIssue => {
-                    if (!visited.has(otherIssue.id)) {
-                        if (haversineDistance(currentIssue.location, otherIssue.location) < CLUSTER_RADIUS_METERS) {
+                while (queue.length > 0) {
+                    const currentIssue = queue.shift()!;
+                    currentCluster.push(currentIssue);
+
+                    issueList.forEach(otherIssue => {
+                        if (!visited.has(otherIssue.id) && haversineDistance(currentIssue.location, otherIssue.location) < CLUSTER_RADIUS_METERS) {
                             visited.add(otherIssue.id);
                             queue.push(otherIssue);
                         }
-                    }
-                });
-            }
+                    });
+                }
 
-            if (currentCluster.length > 1) {
-                // Calculate centroid of the cluster
-                const center = currentCluster.reduce((acc, i) => {
-                    acc.lat += i.location.lat;
-                    acc.lng += i.location.lng;
-                    return acc;
-                }, { lat: 0, lng: 0 });
-                center.lat /= currentCluster.length;
-                center.lng /= currentCluster.length;
+                if (currentCluster.length >= minClusterSize) {
+                    const center = currentCluster.reduce((acc, i) => {
+                        acc.lat += i.location.lat;
+                        acc.lng += i.location.lng;
+                        return acc;
+                    }, { lat: 0, lng: 0 });
+                    center.lat /= currentCluster.length;
+                    center.lng /= currentCluster.length;
 
-                // Calculate the radius to encompass all points in the cluster
-                let radius = 0;
-                currentCluster.forEach(i => {
-                    const distance = haversineDistance(center, i.location);
-                    if (distance > radius) {
-                        radius = distance;
-                    }
-                });
-                
-                // Add a small buffer to the radius
-                radius += 500; 
+                    let radius = 0;
+                    currentCluster.forEach(i => {
+                        const distance = haversineDistance(center, i.location);
+                        if (distance > radius) radius = distance;
+                    });
+                    
+                    radius += 200; // Add a small buffer
 
-                clusters.push({ center, radius });
-            }
-        });
+                    clusters.push({ center, radius });
+                }
+            });
+        };
+
+        findClusters(highPriorityIssues, 2); // 2 or more for High priority
+        findClusters(mediumPriorityIssues, 4); // 4 or more for Medium priority
 
         return clusters;
     }, [issues]);
@@ -148,7 +148,7 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
                 </AdvancedMarker>
             ))}
 
-            {highPriorityZones.map((zone, index) => (
+            {hotspotZones.map((zone, index) => (
                  <MapCircle
                     key={index}
                     center={zone.center}
