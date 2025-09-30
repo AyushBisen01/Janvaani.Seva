@@ -16,25 +16,19 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
-    // Fetch all issues and all detections in parallel
-    const [realIssues, allDetections] = await Promise.all([
-        IssueModel.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).lean(),
-        DetectionModel.find({}).lean()
-    ]);
-
-    // Create a map for efficient lookup of annotated images by issue ID
-    const detectionMap = new Map<string, string>();
-    allDetections.forEach(detection => {
-      if (detection.issueId && detection.annotatedImageUrl) {
-        detectionMap.set(detection.issueId.toString(), detection.annotatedImageUrl);
-      }
-    });
+    // Fetch all issues and populate the virtual 'detection' field
+    const realIssues = await IssueModel.find({})
+      .populate('userId', 'name email')
+      .populate('detection') // This populates the virtual field
+      .sort({ createdAt: -1 })
+      .lean({ virtuals: true });
 
     // Map database documents to the Issue type
     const mappedIssues = realIssues.map((issue) => {
       const issueIdString = issue._id.toString();
       
-      const annotatedImageUrl = detectionMap.get(issueIdString) || null;
+      // Access the populated detection document and get the annotatedImageUrl
+      const annotatedImageUrl = issue.detection?.annotatedImageUrl || null;
       
       let status = capitalize(issue.status || 'pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB

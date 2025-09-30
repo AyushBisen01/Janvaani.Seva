@@ -21,6 +21,9 @@ interface IIssue extends Document {
   resolvedAt?: Date;
   proofUrl?: string;
   proofHint?: string;
+
+  // Virtual field
+  detection?: any;
 }
 
 const IssueSchema: Schema<IIssue> = new Schema({
@@ -47,7 +50,19 @@ const IssueSchema: Schema<IIssue> = new Schema({
   resolvedAt: Date,
   proofUrl: String,
   proofHint: String,
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual populate for detections
+IssueSchema.virtual('detection', {
+  ref: 'Detection',
+  localField: '_id',
+  foreignField: 'issueId',
+  justOne: true
+});
 
 
 // Avoid model re-compilation
