@@ -34,8 +34,7 @@ export async function getIssues(): Promise<Issue[]> {
     const mappedIssues = realIssues.map((issue) => {
       const issueIdString = issue._id.toString();
       
-      // ONLY use the annotatedImageUrl. If not present, imageUrl will be an empty string.
-      const annotatedImageUrl = detectionMap.get(issueIdString) || '';
+      const annotatedImageUrl = detectionMap.get(issueIdString) || null;
       
       let status = capitalize(issue.status || 'pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB
@@ -60,7 +59,8 @@ export async function getIssues(): Promise<Issue[]> {
           name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
           contact: (issue.userId as any)?.email || 'N/A',
         },
-        imageUrl: annotatedImageUrl, // This will be the annotated URL or an empty string
+        imageUrl: issue.imageUrl, // Original image URL
+        annotatedImageUrl: annotatedImageUrl, // Annotated image URL (or null)
         imageHint: issue.title, // Use title as a hint
         proofUrl: issue.proofUrl,
         proofHint: issue.proofHint,
@@ -212,5 +212,3 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
-
-    
