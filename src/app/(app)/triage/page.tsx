@@ -83,7 +83,9 @@ function TriageDataTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {issues.map((issue) => (
+          {issues.map((issue) => {
+            const displayImageUrl = issue.annotatedImageUrl || issue.imageUrl;
+            return (
             <TableRow key={issue.id} data-state={selectedIssues.includes(issue.id) ? 'selected' : ''}>
               <TableCell>
                 <Checkbox 
@@ -98,9 +100,9 @@ function TriageDataTable({
                 </div>
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {issue.imageUrl ? (
+                {displayImageUrl ? (
                   <Image
-                    src={issue.imageUrl}
+                    src={displayImageUrl}
                     alt={issue.category}
                     width={64}
                     height={64}
@@ -148,7 +150,7 @@ function TriageDataTable({
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
+          )})}
         </TableBody>
       </Table>
     </div>
