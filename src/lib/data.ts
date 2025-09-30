@@ -33,11 +33,13 @@ export async function getIssues(): Promise<Issue[]> {
     // Map database documents to the Issue type
     const mappedIssues = realIssues.map((issue) => {
       const issueTime = Math.round(new Date(issue.createdAt).getTime() / 1000);
+      
       // Find a matching detection URL from the map, allowing for a small time window.
-      // Only use the annotatedImageUrl and do not fall back to the original imageUrl.
+      // If no annotatedImageUrl is found, fall back to the original imageUrl from the issue.
       let imageUrl = detectionMap.get(issueTime) || 
                      detectionMap.get(issueTime - 1) || 
-                     detectionMap.get(issueTime + 1) || 
+                     detectionMap.get(issueTime + 1) ||
+                     issue.imageUrl || // Fallback to the original image URL
                      '';
       
       let status = capitalize(issue.status || 'pending');
