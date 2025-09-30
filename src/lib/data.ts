@@ -16,11 +16,12 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
-    // 1. Fetch all detections and create a lookup map
+    // 1. Fetch all detections and create a lookup map of issueId -> annotatedImageUrl
     const detections = await DetectionModel.find({}).lean();
     const annotatedImageMap = new Map<string, string>();
     for (const detection of detections) {
         if (detection.issueId && detection.annotatedImageUrl) {
+            // Ensure the key is a string for reliable matching
             annotatedImageMap.set(detection.issueId.toString(), detection.annotatedImageUrl);
         }
     }
@@ -33,8 +34,10 @@ export async function getIssues(): Promise<Issue[]> {
 
     // 3. Map issues and attach the annotated image URL
     const mappedIssues = realIssues.map((issue) => {
+      // Ensure the ID is a string for the lookup
       const issueIdString = issue._id.toString();
       
+      // Get the annotated URL from our map, default to empty string if not found.
       const annotatedImageUrl = annotatedImageMap.get(issueIdString) || '';
       
       let status = capitalize(issue.status || 'pending');
@@ -60,7 +63,7 @@ export async function getIssues(): Promise<Issue[]> {
           name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
           contact: (issue.userId as any)?.email || 'N/A',
         },
-        imageUrl: annotatedImageUrl, // Use only the annotated URL
+        imageUrl: annotatedImageUrl, // Exclusively use the annotated URL
         imageHint: issue.title, // Use title as a hint
         proofUrl: issue.proofUrl,
         proofHint: issue.proofHint,
@@ -71,6 +74,7 @@ export async function getIssues(): Promise<Issue[]> {
     });
 
     const placeholderIssues = _getIssues().map(issue => {
+        // Look up annotated image for placeholder data as well
         const annotatedImageUrl = annotatedImageMap.get(issue.id) || '';
         return {
             ...issue,
