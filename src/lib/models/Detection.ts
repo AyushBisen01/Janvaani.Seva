@@ -2,6 +2,7 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
 
 interface IDetection extends Document {
+  issueId: mongoose.Schema.Types.ObjectId;
   annotatedImageUrl: string;
   detections: {
     class: string;
@@ -14,6 +15,7 @@ interface IDetection extends Document {
 }
 
 const DetectionSchema: Schema<IDetection> = new Schema({
+  issueId: { type: mongoose.Schema.Types.ObjectId, ref: 'Issue' },
   annotatedImageUrl: String,
   detections: [{
     class: String,

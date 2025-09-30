@@ -17,30 +17,21 @@ export async function getIssues(): Promise<Issue[]> {
     await dbConnect();
     const realIssues = await IssueModel.find({}).populate('userId', 'name email').sort({ createdAt: -1 }).lean();
     
-    // Fetch all recent detections and create a map for efficient lookup
-    const allDetections = await DetectionModel.find({}).sort({ createdAt: -1 }).lean();
-    const detectionMap = new Map<number, string>();
+    // Fetch all recent detections and create a map for efficient lookup by issue ID
+    const allDetections = await DetectionModel.find({}).lean();
+    const detectionMap = new Map<string, string>();
     allDetections.forEach(detection => {
-      if (detection.annotatedImageUrl) {
-        // Round timestamp to the nearest second to account for small time differences
-        const detectionTime = Math.round(new Date(detection.createdAt).getTime() / 1000);
-        if (!detectionMap.has(detectionTime)) {
-            detectionMap.set(detectionTime, detection.annotatedImageUrl);
-        }
+      if (detection.issueId && detection.annotatedImageUrl) {
+        detectionMap.set(detection.issueId.toString(), detection.annotatedImageUrl);
       }
     });
 
     // Map database documents to the Issue type
     const mappedIssues = realIssues.map((issue) => {
-      const issueTime = Math.round(new Date(issue.createdAt).getTime() / 1000);
+      const issueIdString = issue._id.toString();
       
-      // Find a matching detection URL from the map, allowing for a small time window.
-      // If no annotatedImageUrl is found, fall back to the original imageUrl from the issue.
-      let imageUrl = detectionMap.get(issueTime) || 
-                     detectionMap.get(issueTime - 1) || 
-                     detectionMap.get(issueTime + 1) ||
-                     issue.imageUrl || // Fallback to the original image URL
-                     '';
+      // Use the annotated image URL if available, otherwise fall back to the original.
+      const imageUrl = detectionMap.get(issueIdString) || issue.imageUrl || '';
       
       let status = capitalize(issue.status || 'pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB
@@ -48,7 +39,7 @@ export async function getIssues(): Promise<Issue[]> {
       }
 
       return {
-        id: issue._id.toString(),
+        id: issueIdString,
         category: issue.title,
         description: issue.description,
         location: {
