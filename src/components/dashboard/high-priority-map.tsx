@@ -69,33 +69,39 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
     }, [selectedIssue, map]);
 
     const highPriorityZones = React.useMemo(() => {
-        const highPriorityIssues = issues.filter(i => i.priority === 'High' && i.status !== 'Resolved');
-        const clusters = [];
-        const visited = new Set<string>();
+        const highPriorityIssues = issues.filter(i => i.priority === 'High' && i.status !== 'Resolved' && i.status !== 'Rejected');
+        const clusters: {lat: number, lng: number}[] = [];
+        let visited = new Set<string>();
 
-        for (const issue of highPriorityIssues) {
-            if (visited.has(issue.id)) continue;
-            
-            const cluster = [issue];
+        function findNeighbors(issue: Issue, currentCluster: Issue[]) {
             visited.add(issue.id);
+            currentCluster.push(issue);
 
             for (const otherIssue of highPriorityIssues) {
-                if (!visited.has(otherIssue.id) && haversineDistance(issue.location, otherIssue.location) < 10000) {
-                     cluster.push(otherIssue);
-                     visited.add(otherIssue.id);
+                if (!visited.has(otherIssue.id)) {
+                    if (haversineDistance(issue.location, otherIssue.location) < 50000) { // 50km radius
+                        findNeighbors(otherIssue, currentCluster);
+                    }
                 }
             }
-            if (cluster.length > 1) { // Only consider clusters of 2 or more
-                const clusterCenter = cluster.reduce((acc, i) => {
-                    acc.lat += i.location.lat;
-                    acc.lng += i.location.lng;
-                    return acc;
-                }, {lat: 0, lng: 0});
+        }
 
-                clusterCenter.lat /= cluster.length;
-                clusterCenter.lng /= cluster.length;
+        for (const issue of highPriorityIssues) {
+            if (!visited.has(issue.id)) {
+                const currentCluster: Issue[] = [];
+                findNeighbors(issue, currentCluster);
 
-                clusters.push(clusterCenter);
+                if (currentCluster.length > 1) {
+                    const clusterCenter = currentCluster.reduce((acc, i) => {
+                        acc.lat += i.location.lat;
+                        acc.lng += i.location.lng;
+                        return acc;
+                    }, {lat: 0, lng: 0});
+
+                    clusterCenter.lat /= currentCluster.length;
+                    clusterCenter.lng /= currentCluster.length;
+                    clusters.push(clusterCenter);
+                }
             }
         }
         return clusters;
@@ -127,7 +133,7 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
                  <MapCircle
                     key={index}
                     center={zone}
-                    radius={10000} // 10km
+                    radius={50000} // 50km
                     strokeColor="#FF0000"
                     strokeOpacity={0.8}
                     strokeWeight={2}
@@ -148,7 +154,7 @@ export function HighPriorityMap({issues}: {issues: Issue[]}) {
                         <div className="flex justify-between items-center mt-3">
                             <Badge className={cn(statusBadgeColors[selectedIssue.status])} variant="outline">{selectedIssue.status}</Badge>
                             <Button asChild variant="link" size="sm" className="p-0 h-auto">
-                                <Link href={`/issues/${selectedIssue.id}`}>View Details</Link>
+                                <Link href={`/issues/${selected.id}`}>View Details</Link>
                             </Button>
                         </div>
                     </div>
