@@ -16,29 +16,15 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
-    // 1. Fetch all detections and create a lookup map of issueId -> annotatedImageUrl
-    const detections = await DetectionModel.find({}).lean();
-    const annotatedImageMap = new Map<string, string>();
-    for (const detection of detections) {
-        if (detection.issueId && detection.annotatedImageUrl) {
-            // Ensure the key is a string for reliable matching
-            annotatedImageMap.set(detection.issueId.toString(), detection.annotatedImageUrl);
-        }
-    }
-
-    // 2. Fetch all issues
+    // Fetch all issues
     const realIssues = await IssueModel.find({})
       .populate('userId', 'name email')
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
-    // 3. Map issues and attach the annotated image URL
+    // Map issues to the format expected by the frontend
     const mappedIssues = realIssues.map((issue) => {
-      // Ensure the ID is a string for the lookup
       const issueIdString = issue._id.toString();
-      
-      // Get the annotated URL from our map, default to empty string if not found.
-      const annotatedImageUrl = annotatedImageMap.get(issueIdString) || '';
       
       let status = capitalize(issue.status || 'pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB
@@ -63,7 +49,7 @@ export async function getIssues(): Promise<Issue[]> {
           name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
           contact: (issue.userId as any)?.email || 'N/A',
         },
-        imageUrl: annotatedImageUrl, // Exclusively use the annotated URL
+        imageUrl: issue.imageUrl || '', // Use the imageUrl from the issue itself
         imageHint: issue.title, // Use title as a hint
         proofUrl: issue.proofUrl,
         proofHint: issue.proofHint,
@@ -73,14 +59,7 @@ export async function getIssues(): Promise<Issue[]> {
       };
     });
 
-    const placeholderIssues = _getIssues().map(issue => {
-        // Look up annotated image for placeholder data as well
-        const annotatedImageUrl = annotatedImageMap.get(issue.id) || '';
-        return {
-            ...issue,
-            imageUrl: annotatedImageUrl,
-        }
-    });
+    const placeholderIssues = _getIssues();
     
     // Combine and remove duplicates, giving preference to real issues
     const combined = [...mappedIssues, ...placeholderIssues];
