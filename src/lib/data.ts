@@ -16,19 +16,26 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
-    // Fetch all issues and populate the virtual 'detection' field
+    // 1. Fetch all detections and create a lookup map
+    const detections = await DetectionModel.find({}).lean();
+    const annotatedImageMap = new Map<string, string>();
+    for (const detection of detections) {
+        if (detection.issueId && detection.annotatedImageUrl) {
+            annotatedImageMap.set(detection.issueId.toString(), detection.annotatedImageUrl);
+        }
+    }
+
+    // 2. Fetch all issues
     const realIssues = await IssueModel.find({})
       .populate('userId', 'name email')
-      .populate('detection') // This populates the virtual field
       .sort({ createdAt: -1 })
       .lean({ virtuals: true });
 
-    // Map database documents to the Issue type
+    // 3. Map issues and attach the annotated image URL
     const mappedIssues = realIssues.map((issue) => {
       const issueIdString = issue._id.toString();
       
-      // Access the populated detection document and get the annotatedImageUrl
-      const annotatedImageUrl = issue.detection?.annotatedImageUrl || null;
+      const annotatedImageUrl = annotatedImageMap.get(issueIdString) || '';
       
       let status = capitalize(issue.status || 'pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB
@@ -53,8 +60,7 @@ export async function getIssues(): Promise<Issue[]> {
           name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
           contact: (issue.userId as any)?.email || 'N/A',
         },
-        imageUrl: issue.imageUrl, // Original image URL
-        annotatedImageUrl: annotatedImageUrl, // Annotated image URL (or null)
+        imageUrl: annotatedImageUrl, // Use only the annotated URL
         imageHint: issue.title, // Use title as a hint
         proofUrl: issue.proofUrl,
         proofHint: issue.proofHint,

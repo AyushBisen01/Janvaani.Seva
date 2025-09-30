@@ -152,8 +152,6 @@ export default function IssueDetailPage() {
     { icon: User, label: 'Citizen', value: `${issue.citizen.name} (${issue.citizen.contact})` },
   ];
 
-  const displayImageUrl = issue.annotatedImageUrl || issue.imageUrl;
-
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-3">
@@ -250,9 +248,9 @@ export default function IssueDetailPage() {
               <CardTitle className="font-headline">Issue Media</CardTitle>
             </CardHeader>
             <CardContent>
-              {displayImageUrl ? (
+              {issue.imageUrl ? (
                 <Image
-                  src={displayImageUrl}
+                  src={issue.imageUrl}
                   alt={issue.category}
                   width={800}
                   height={600}
@@ -263,7 +261,7 @@ export default function IssueDetailPage() {
                 <div className="h-[450px] flex items-center justify-center bg-muted rounded-lg">
                   <div className="text-center text-muted-foreground">
                     <ImageIcon className="mx-auto h-12 w-12" />
-                    <p className="mt-2 text-sm">Image not available.</p>
+                    <p className="mt-2 text-sm">Annotated image not available.</p>
                   </div>
                 </div>
               )}

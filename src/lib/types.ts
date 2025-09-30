@@ -22,7 +22,6 @@ export interface Issue {
     contact: string;
   };
   imageUrl: string;
-  annotatedImageUrl?: string | null;
   imageHint: string;
   proofUrl?: string;
   proofHint?: string;
