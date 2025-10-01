@@ -26,6 +26,8 @@ import {
   Clock,
   MessageSquare,
   ImageIcon,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { MapProvider } from '@/components/map/map-provider';
@@ -201,6 +203,16 @@ export default function IssueDetailPage() {
                           </div>
                       </div>
                   ))}
+                  <div className="flex items-start gap-4 col-span-2">
+                    <div className="flex items-center gap-2">
+                        <ThumbsUp className="h-4 w-4 text-green-500" />
+                        <p><span className="font-semibold">{issue.greenFlags ?? 0}</span> Green Flags</p>
+                    </div>
+                     <div className="flex items-center gap-2">
+                        <ThumbsDown className="h-4 w-4 text-red-500" />
+                        <p><span className="font-semibold">{issue.redFlags ?? 0}</span> Red Flags</p>
+                    </div>
+                </div>
               </div>
             </CardContent>
           </Card>

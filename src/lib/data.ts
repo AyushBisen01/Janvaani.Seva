@@ -53,6 +53,8 @@ export async function getIssues(): Promise<Issue[]> {
         imageHint: issue.title, // Use title as a hint
         proofUrl: issue.proofUrl,
         proofHint: issue.proofHint,
+        greenFlags: issue.greenFlags || 0,
+        redFlags: issue.redFlags || 0,
         statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
           ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
           : [{ status: capitalize(issue.status || 'pending'), date: issue.createdAt }] // Create default history

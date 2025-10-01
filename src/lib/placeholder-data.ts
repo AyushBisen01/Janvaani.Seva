@@ -1,3 +1,4 @@
+
 import type { Issue, User } from './types';
 
 // This file now acts as a mock database.
@@ -40,7 +41,9 @@ let issues: Issue[] = [
     reportedAt: '2024-07-20T09:00:00Z',
     citizen: { name: 'John Doe', contact: 'john.d@email.com' },
     imageUrl: 'https://picsum.photos/seed/pothole1/800/600',
-    imageHint: 'pothole road'
+    imageHint: 'pothole road',
+    greenFlags: 25,
+    redFlags: 2,
   },
   {
     id: 'CIV-002',
@@ -53,7 +56,9 @@ let issues: Issue[] = [
     assignedTo: 'Sanitation Dept.',
     citizen: { name: 'Jane Smith', contact: 'jane.s@email.com' },
     imageUrl: 'https://picsum.photos/seed/garbage1/800/600',
-    imageHint: 'garbage overflow'
+    imageHint: 'garbage overflow',
+    greenFlags: 15,
+    redFlags: 0,
   },
   {
     id: 'CIV-003',
@@ -69,7 +74,9 @@ let issues: Issue[] = [
     imageUrl: 'https://picsum.photos/seed/water1/800/600',
     imageHint: 'water leak',
     proofUrl: 'https://picsum.photos/seed/proof1/800/600',
-    proofHint: 'pipe repaired'
+    proofHint: 'pipe repaired',
+    greenFlags: 50,
+    redFlags: 1,
   },
   {
     id: 'CIV-004',
@@ -81,7 +88,9 @@ let issues: Issue[] = [
     reportedAt: '2024-07-21T08:00:00Z',
     citizen: { name: 'Emily Carter', contact: 'emily.c@email.com' },
     imageUrl: 'https://picsum.photos/seed/light1/800/600',
-    imageHint: 'street light'
+    imageHint: 'street light',
+    greenFlags: 8,
+    redFlags: 22,
   },
     {
     id: 'CIV-005',
@@ -93,7 +102,9 @@ let issues: Issue[] = [
     reportedAt: '2024-07-22T10:15:00Z',
     citizen: { name: 'Michael Brown', contact: 'michael.b@email.com' },
     imageUrl: 'https://picsum.photos/seed/pothole2/800/600',
-    imageHint: 'pothole highway'
+    imageHint: 'pothole highway',
+    greenFlags: 5,
+    redFlags: 1,
   },
   {
     id: 'CIV-006',
@@ -106,7 +117,9 @@ let issues: Issue[] = [
     assignedTo: 'Sanitation Dept.',
     citizen: { name: 'Jessica White', contact: 'jessica.w@email.com' },
     imageUrl: 'https://picsum.photos/seed/garbage2/800/600',
-    imageHint: 'debris dumped'
+    imageHint: 'debris dumped',
+    greenFlags: 30,
+    redFlags: 3,
   },
 ];
 

@@ -30,6 +30,8 @@ import {
   Eye,
   MoreHorizontal,
   ImageIcon,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -79,6 +81,7 @@ function TriageDataTable({
             <TableHead className="hidden md:table-cell">Image</TableHead>
             <TableHead className="hidden md:table-cell">Reported</TableHead>
             <TableHead>Priority</TableHead>
+            <TableHead className="hidden lg:table-cell">Verification</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -118,6 +121,18 @@ function TriageDataTable({
               </TableCell>
               <TableCell>
                 <Badge variant={issue.priority === 'High' ? 'destructive' : issue.priority === 'Medium' ? 'secondary' : 'outline'}>{issue.priority}</Badge>
+              </TableCell>
+              <TableCell className="hidden lg:table-cell">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center text-green-600">
+                        <ThumbsUp className="h-4 w-4 mr-1" />
+                        <span className="text-sm font-medium">{issue.greenFlags ?? 0}</span>
+                    </div>
+                    <div className="flex items-center text-red-600">
+                        <ThumbsDown className="h-4 w-4 mr-1" />
+                        <span className="text-sm font-medium">{issue.redFlags ?? 0}</span>
+                    </div>
+                </div>
               </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>

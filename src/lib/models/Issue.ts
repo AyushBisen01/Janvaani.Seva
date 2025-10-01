@@ -21,6 +21,8 @@ interface IIssue extends Document {
   resolvedAt?: Date;
   proofUrl?: string;
   proofHint?: string;
+  greenFlags: number;
+  redFlags: number;
 }
 
 const IssueSchema: Schema<IIssue> = new Schema({
@@ -47,6 +49,8 @@ const IssueSchema: Schema<IIssue> = new Schema({
   resolvedAt: Date,
   proofUrl: String,
   proofHint: String,
+  greenFlags: { type: Number, default: 0 },
+  redFlags: { type: Number, default: 0 },
 }, { 
   timestamps: true,
   toJSON: { virtuals: true },

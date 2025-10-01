@@ -15,6 +15,7 @@ import type { Issue, IssuePriority, IssueStatus } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { FormattedDate } from '../formatted-date';
+import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
 interface IssuesDataTableProps {
   issues: Issue[];
@@ -50,6 +51,7 @@ export function IssuesDataTable({ issues }: IssuesDataTableProps) {
             <TableHead>Issue ID</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Location</TableHead>
+            <TableHead>Verification</TableHead>
             <TableHead>Priority</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Reported On</TableHead>
@@ -66,6 +68,18 @@ export function IssuesDataTable({ issues }: IssuesDataTableProps) {
               <TableCell className="font-medium">{issue.id}</TableCell>
               <TableCell>{issue.category}</TableCell>
               <TableCell>{issue.location.address}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center text-green-600">
+                        <ThumbsUp className="h-4 w-4 mr-1" />
+                        <span className="text-sm font-medium">{issue.greenFlags ?? 0}</span>
+                    </div>
+                    <div className="flex items-center text-red-600">
+                        <ThumbsDown className="h-4 w-4 mr-1" />
+                        <span className="text-sm font-medium">{issue.redFlags ?? 0}</span>
+                    </div>
+                </div>
+              </TableCell>
               <TableCell>
                 <Badge
                   variant="outline"

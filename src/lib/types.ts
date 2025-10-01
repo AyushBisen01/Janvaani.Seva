@@ -26,6 +26,8 @@ export interface Issue {
   proofUrl?: string;
   proofHint?: string;
   statusHistory?: { status: IssueStatus | string, date: Date | string }[];
+  greenFlags?: number;
+  redFlags?: number;
 }
 
 export type UserRole = "Super Admin" | "Department Head" | "Staff" | "Citizen";
