@@ -182,7 +182,7 @@ export async function getIssues(): Promise<Issue[]> {
         priority: issue.priority || 'Medium', // Default priority
         reportedAt: issue.createdAt,
         resolvedAt: issue.resolvedAt,
-        assignedTo: issue.assignedDepartment,
+        assignedTo: issue.assignedDepartment, // Use assignedDepartment from DB
         citizen: {
           name: issue.user?.name || issue.submittedBy || 'Unknown',
           contact: issue.user?.email || 'N/A',
@@ -322,5 +322,3 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
-
-    
