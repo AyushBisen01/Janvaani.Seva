@@ -117,7 +117,7 @@ export async function getIssues(): Promise<Issue[]> {
         priority: issue.priority || 'Medium', // Default priority
         reportedAt: issue.createdAt,
         resolvedAt: issue.resolvedAt,
-        assignedTo: issue.assignedTo,
+        assignedTo: issue.assignedDepartment,
         citizen: {
           name: issue.user?.name || issue.submittedBy || 'Unknown',
           contact: issue.user?.email || 'N/A',
@@ -201,7 +201,7 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         }
         
         if (updates.assignedTo) {
-            updateOp.$set.assignedTo = updates.assignedTo;
+            updateOp.$set.assignedDepartment = updates.assignedTo;
         }
         if (updates.priority) {
             updateOp.$set.priority = updates.priority;
@@ -237,7 +237,7 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
                  pushOp.statusHistory = { status: newStatus, date: new Date() };
             }
              if (updateData.priority) setOp.priority = updateData.priority;
-             if (updateData.assignedTo) setOp.assignedTo = updateData.assignedTo;
+             if (updateData.assignedTo) setOp.assignedDepartment = updateData.assignedTo;
 
             const finalUpdate: any = {};
             if(Object.keys(setOp).length > 0) finalUpdate.$set = setOp;
