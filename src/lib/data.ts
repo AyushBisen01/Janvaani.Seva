@@ -22,7 +22,7 @@ export async function getIssues(): Promise<Issue[]> {
     const rejectionThreshold = 20;
 
     const pendingIssuesForTriage = await IssueModel.aggregate([
-      { $match: { status: 'pending' } },
+      { $match: { status: 'Pending' } },
       {
         $lookup: {
           from: 'flags',
@@ -56,8 +56,8 @@ export async function getIssues(): Promise<Issue[]> {
         updateMany: {
           filter: { _id: { $in: issuesToApprove } },
           update: { 
-            $set: { status: 'approved' },
-            $push: { statusHistory: { status: 'approved', date: new Date(), notes: 'Auto-approved by crowd consensus.' } }
+            $set: { status: 'Approved' },
+            $push: { statusHistory: { status: 'Approved', date: new Date(), notes: 'Auto-approved by crowd consensus.' } }
           }
         }
       });
@@ -67,8 +67,8 @@ export async function getIssues(): Promise<Issue[]> {
         updateMany: {
           filter: { _id: { $in: issuesToReject } },
           update: { 
-            $set: { status: 'rejected' },
-            $push: { statusHistory: { status: 'rejected', date: new Date(), notes: 'Auto-rejected by crowd consensus.' } }
+            $set: { status: 'Rejected' },
+            $push: { statusHistory: { status: 'Rejected', date: new Date(), notes: 'Auto-rejected by crowd consensus.' } }
           }
         }
       });
@@ -161,7 +161,7 @@ export async function getIssues(): Promise<Issue[]> {
     const mappedIssues = realIssues.map((issue) => {
       const issueIdString = issue._id.toString();
       
-      let status = capitalize(issue.status || 'pending');
+      let status = capitalize(issue.status || 'Pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB
         status = 'Assigned';
       }
@@ -196,7 +196,7 @@ export async function getIssues(): Promise<Issue[]> {
         redFlagReasons: issue.redFlagReasons?.filter((r: any) => r.reason) || [],
         statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
           ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
-          : [{ status: capitalize(issue.status || 'pending'), date: issue.createdAt }] // Create default history
+          : [{ status: capitalize(issue.status || 'Pending'), date: issue.createdAt }] // Create default history
       };
     });
 
@@ -254,11 +254,9 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         const updateOp: any = { $set: {} };
         
         if (updates.status) {
-            let newStatus = updates.status.toLowerCase();
-            if (newStatus === 'assigned') {
-                newStatus = 'inProgress';
-            }
-            const currentStatus = (issueToUpdate.status || 'pending').toLowerCase();
+            let newStatus = updates.status;
+            const currentStatus = (issueToUpdate.status || 'Pending');
+
             if (newStatus !== currentStatus) {
                 updateOp.$set.status = newStatus;
                 updateOp.$push = { statusHistory: { status: newStatus, date: new Date() } };
@@ -294,10 +292,7 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             const pushOp: any = {};
             
             if (updateData.status) {
-                let newStatus = updateData.status.toLowerCase();
-                if (newStatus === 'assigned') {
-                    newStatus = 'inProgress';
-                }
+                let newStatus = updateData.status;
                  setOp.status = newStatus;
                  pushOp.statusHistory = { status: newStatus, date: new Date() };
             }

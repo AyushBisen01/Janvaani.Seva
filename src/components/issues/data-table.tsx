@@ -96,7 +96,7 @@ export function IssuesDataTable({ issues }: IssuesDataTableProps) {
                   {issue.status}
                 </Badge>
               </TableCell>
-              <TableCell><FormattedDate date={issue.reportedAt} /></TableCell>
+              <TableCell><FormattedDate date={new Date(issue.reportedAt)} /></TableCell>
               <TableCell>{issue.assignedTo || 'Unassigned'}</TableCell>
             </TableRow>
           ))}
