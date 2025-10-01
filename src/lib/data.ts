@@ -103,7 +103,7 @@ export async function getIssues(): Promise<Issue[]> {
           update: updateOp
         }
       };
-    });
+    }).filter(op => Object.keys(op.updateOne.update).length > 0); // Only include ops that have something to update
 
     if (bulkOps.length > 0) {
       await IssueModel.bulkWrite(bulkOps);
