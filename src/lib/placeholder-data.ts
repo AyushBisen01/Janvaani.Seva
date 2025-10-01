@@ -42,12 +42,6 @@ let issues: Issue[] = [
     citizen: { name: 'John Doe', contact: 'john.d@email.com' },
     imageUrl: 'https://picsum.photos/seed/pothole1/800/600',
     imageHint: 'pothole road',
-    greenFlags: 25,
-    redFlags: 2,
-    redFlagReasons: [
-        { reason: 'This is a duplicate of issue CIV-005', user: 'ConcernedCitizen1' },
-        { reason: 'The pothole is much bigger than it looks in the photo', user: 'LocalShopkeeper' }
-    ]
   },
   {
     id: 'CIV-002',
@@ -61,9 +55,6 @@ let issues: Issue[] = [
     citizen: { name: 'Jane Smith', contact: 'jane.s@email.com' },
     imageUrl: 'https://picsum.photos/seed/garbage1/800/600',
     imageHint: 'garbage overflow',
-    greenFlags: 15,
-    redFlags: 0,
-    redFlagReasons: []
   },
   {
     id: 'CIV-003',
@@ -80,11 +71,6 @@ let issues: Issue[] = [
     imageHint: 'water leak',
     proofUrl: 'https://picsum.photos/seed/proof1/800/600',
     proofHint: 'pipe repaired',
-    greenFlags: 50,
-    redFlags: 1,
-    redFlagReasons: [
-        { reason: 'The repair was temporary and is leaking again.', user: 'Resident22'}
-    ]
   },
   {
     id: 'CIV-004',
@@ -97,12 +83,6 @@ let issues: Issue[] = [
     citizen: { name: 'Emily Carter', contact: 'emily.c@email.com' },
     imageUrl: 'https://picsum.photos/seed/light1/800/600',
     imageHint: 'street light',
-    greenFlags: 8,
-    redFlags: 22,
-    redFlagReasons: [
-        { reason: 'This has been reported multiple times already.', user: 'NightWalker'},
-        { reason: 'Not an issue, the light is working fine now.', user: 'LocalVendor'}
-    ]
   },
     {
     id: 'CIV-005',
@@ -115,9 +95,6 @@ let issues: Issue[] = [
     citizen: { name: 'Michael Brown', contact: 'michael.b@email.com' },
     imageUrl: 'https://picsum.photos/seed/pothole2/800/600',
     imageHint: 'pothole highway',
-    greenFlags: 5,
-    redFlags: 1,
-    redFlagReasons: []
   },
   {
     id: 'CIV-006',
@@ -131,9 +108,6 @@ let issues: Issue[] = [
     citizen: { name: 'Jessica White', contact: 'jessica.w@email.com' },
     imageUrl: 'https://picsum.photos/seed/garbage2/800/600',
     imageHint: 'debris dumped',
-    greenFlags: 30,
-    redFlags: 3,
-    redFlagReasons: []
   },
 ];
 

@@ -17,35 +17,40 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
+    // --- START: AGGREGATE AND UPDATE FLAG COUNTS ---
+    const flagCounts = await FlagModel.aggregate([
+        {
+            $group: {
+                _id: '$issueId',
+                greenFlags: { $sum: { $cond: [{ $eq: ['$type', 'green'] }, 1, 0] } },
+                redFlags: { $sum: { $cond: [{ $eq: ['$type', 'red'] }, 1, 0] } },
+            }
+        }
+    ]);
+
+    if (flagCounts.length > 0) {
+        const flagBulkOps = flagCounts.map(fc => ({
+            updateOne: {
+                filter: { _id: fc._id },
+                update: { $set: { greenFlags: fc.greenFlags, redFlags: fc.redFlags } }
+            }
+        }));
+        await IssueModel.bulkWrite(flagBulkOps);
+    }
+    // --- END: AGGREGATE AND UPDATE FLAG COUNTS ---
+
+
     // --- START: AUTO-APPROVAL/REJECTION LOGIC ---
     const approvalThreshold = 20;
     const rejectionThreshold = 20;
 
-    const pendingIssuesForTriage = await IssueModel.aggregate([
-      { $match: { status: 'Pending' } },
-      {
-        $lookup: {
-          from: 'flags',
-          localField: '_id',
-          foreignField: 'issueId',
-          as: 'flags'
-        }
-      },
-      {
-        $addFields: {
-          greenFlags: { $size: { $filter: { input: '$flags', as: 'flag', cond: { $eq: ['$$flag.type', 'green'] } } } },
-          redFlags: { $size: { $filter: { input: '$flags', as: 'flag', cond: { $eq: ['$$flag.type', 'red'] } } } }
-        }
-      },
-      {
-        $match: {
-          $or: [
+    const pendingIssuesForTriage = await IssueModel.find({
+        status: 'Pending',
+        $or: [
             { greenFlags: { $gte: approvalThreshold } },
             { redFlags: { $gte: rejectionThreshold } }
-          ]
-        }
-      }
-    ]);
+        ]
+    }).lean();
 
     const issuesToApprove = pendingIssuesForTriage.filter(i => i.greenFlags >= approvalThreshold).map(i => i._id);
     const issuesToReject = pendingIssuesForTriage.filter(i => i.redFlags >= rejectionThreshold).map(i => i._id);
@@ -116,24 +121,6 @@ export async function getIssues(): Promise<Issue[]> {
       },
       {
         $addFields: {
-          greenFlags: {
-            $size: {
-              $filter: {
-                input: '$flags',
-                as: 'flag',
-                cond: { $eq: ['$$flag.type', 'green'] }
-              }
-            }
-          },
-          redFlags: {
-            $size: {
-              $filter: {
-                input: '$flags',
-                as: 'flag',
-                cond: { $eq: ['$$flag.type', 'red'] }
-              }
-            }
-          },
           redFlagReasons: {
             $map: {
               input: {
@@ -255,6 +242,10 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
         
         if (updates.status) {
             let newStatus = updates.status;
+            if (newStatus === 'Assigned') {
+                newStatus = 'inProgress';
+            }
+
             const currentStatus = (issueToUpdate.status || 'Pending');
 
             if (newStatus !== currentStatus) {
@@ -293,6 +284,9 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             
             if (updateData.status) {
                 let newStatus = updateData.status;
+                 if (newStatus === 'Assigned') {
+                    newStatus = 'inProgress';
+                }
                  setOp.status = newStatus;
                  pushOp.statusHistory = { status: newStatus, date: new Date() };
             }
