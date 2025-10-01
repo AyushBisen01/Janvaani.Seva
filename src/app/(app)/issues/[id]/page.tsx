@@ -28,6 +28,7 @@ import {
   ImageIcon,
   ThumbsUp,
   ThumbsDown,
+  MessageCircle,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { MapProvider } from '@/components/map/map-provider';
@@ -203,18 +204,43 @@ export default function IssueDetailPage() {
                           </div>
                       </div>
                   ))}
-                  <div className="flex items-start gap-4 col-span-2">
-                    <div className="flex items-center gap-2">
-                        <ThumbsUp className="h-4 w-4 text-green-500" />
-                        <p><span className="font-semibold">{issue.greenFlags ?? 0}</span> Green Flags</p>
-                    </div>
-                     <div className="flex items-center gap-2">
-                        <ThumbsDown className="h-4 w-4 text-red-500" />
-                        <p><span className="font-semibold">{issue.redFlags ?? 0}</span> Red Flags</p>
-                    </div>
-                </div>
               </div>
             </CardContent>
+          </Card>
+
+           <Card>
+              <CardHeader>
+                  <CardTitle className="font-headline">Community Feedback</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-2 text-green-600">
+                        <ThumbsUp className="h-5 w-5" />
+                        <p className="font-semibold text-lg">{issue.greenFlags ?? 0}</p>
+                        <p className="text-sm text-muted-foreground">Green Flags</p>
+                    </div>
+                     <div className="flex items-center gap-2 text-red-600">
+                        <ThumbsDown className="h-5 w-5" />
+                        <p className="font-semibold text-lg">{issue.redFlags ?? 0}</p>
+                        <p className="text-sm text-muted-foreground">Red Flags</p>
+                    </div>
+                </div>
+
+                {issue.redFlagReasons && issue.redFlagReasons.length > 0 && (
+                    <div>
+                        <Separator className="my-4" />
+                        <h4 className="text-sm font-semibold mb-2">Red Flag Reasons:</h4>
+                        <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
+                            {issue.redFlagReasons.map((reason, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <MessageCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                                  <span>{reason}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+              </CardContent>
           </Card>
 
           <Card>
@@ -318,3 +344,5 @@ export default function IssueDetailPage() {
     </>
   );
 }
+
+    

@@ -5,8 +5,9 @@ import type { Issue, User } from './types';
 import dbConnect from '@/lib/db';
 import IssueModel from '@/lib/models/Issue';
 import UserModel from '@/lib/models/User';
-import DetectionModel from '@/lib/models/Detection';
+import FlagModel from '@/lib/models/Flag';
 import {_getUsers, _getIssues} from '@/lib/placeholder-data'
+import mongoose from 'mongoose';
 
 // Helper to capitalize first letter
 const capitalize = (s: string) => s && s.charAt(0).toUpperCase() + s.slice(1);
@@ -16,11 +17,69 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
-    // Fetch all issues
-    const realIssues = await IssueModel.find({})
-      .populate('userId', 'name email')
-      .sort({ createdAt: -1 })
-      .lean({ virtuals: true });
+    // Aggregate to get flag counts and reasons
+    const realIssues = await IssueModel.aggregate([
+      {
+        $lookup: {
+          from: 'users', // The collection name for UserModel
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      {
+        $unwind: {
+          path: '$user',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'flags', // The collection name for FlagModel
+          localField: '_id',
+          foreignField: 'issueId',
+          as: 'flags'
+        }
+      },
+      {
+        $addFields: {
+          greenFlags: {
+            $size: {
+              $filter: {
+                input: '$flags',
+                as: 'flag',
+                cond: { $eq: ['$$flag.type', 'green'] }
+              }
+            }
+          },
+          redFlags: {
+            $size: {
+              $filter: {
+                input: '$flags',
+                as: 'flag',
+                cond: { $eq: ['$$flag.type', 'red'] }
+              }
+            }
+          },
+          redFlagReasons: {
+            $map: {
+              input: {
+                $filter: {
+                  input: '$flags',
+                  as: 'flag',
+                  cond: { $eq: ['$$flag.type', 'red'] }
+                }
+              },
+              as: 'redFlag',
+              in: '$$redFlag.reason'
+            }
+          }
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      }
+    ]);
 
     // Map issues to the format expected by the frontend
     const mappedIssues = realIssues.map((issue) => {
@@ -46,8 +105,8 @@ export async function getIssues(): Promise<Issue[]> {
         resolvedAt: issue.resolvedAt,
         assignedTo: issue.assignedTo,
         citizen: {
-          name: (issue.userId as any)?.name || issue.submittedBy || 'Unknown',
-          contact: (issue.userId as any)?.email || 'N/A',
+          name: issue.user?.name || issue.submittedBy || 'Unknown',
+          contact: issue.user?.email || 'N/A',
         },
         imageUrl: issue.imageUrl || '', // Use the imageUrl from the issue itself
         imageHint: issue.title, // Use title as a hint
@@ -55,6 +114,7 @@ export async function getIssues(): Promise<Issue[]> {
         proofHint: issue.proofHint,
         greenFlags: issue.greenFlags || 0,
         redFlags: issue.redFlags || 0,
+        redFlagReasons: issue.redFlagReasons?.filter(Boolean) || [], // Filter out null/empty reasons
         statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
           ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
           : [{ status: capitalize(issue.status || 'pending'), date: issue.createdAt }] // Create default history
@@ -203,3 +263,5 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
+
+    
