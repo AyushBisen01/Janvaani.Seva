@@ -41,8 +41,8 @@ export async function getIssues(): Promise<Issue[]> {
 
 
     // --- START: AUTO-APPROVAL/REJECTION LOGIC ---
-    const approvalThreshold = 20;
-    const rejectionThreshold = 20;
+    const approvalThreshold = 25;
+    const rejectionThreshold = 25;
 
     const pendingIssuesForTriage = await IssueModel.find({
         status: 'Pending',
@@ -316,3 +316,5 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
+
+    
