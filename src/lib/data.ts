@@ -103,7 +103,7 @@ export async function getIssues(): Promise<Issue[]> {
           update: updateOp
         }
       };
-    }).filter(op => Object.keys(op.updateOne.update).length > 0); // Only include ops that have something to update
+    }).filter(op => Object.keys(op.updateOne.update).length > 0 && (op.updateOne.update.$set || op.updateOne.update.$push)); // Only include ops that have something to update
 
     if (bulkOps.length > 0) {
       await IssueModel.bulkWrite(bulkOps);
@@ -284,7 +284,7 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
             updateOp.$set.priority = updates.priority;
         }
         
-        if (Object.keys(updateOp.$set).length > 0) {
+        if (Object.keys(updateOp.$set).length > 0 || updateOp.$push) {
             await IssueModel.findByIdAndUpdate(id, updateOp, { new: true, upsert: false }).lean();
         }
 
