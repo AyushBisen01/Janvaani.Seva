@@ -231,10 +231,10 @@ export default function IssueDetailPage() {
                         <Separator className="my-4" />
                         <h4 className="text-sm font-semibold mb-2">Red Flag Reasons:</h4>
                         <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
-                            {issue.redFlagReasons.map((reason, index) => (
+                            {issue.redFlagReasons.map((item, index) => (
                                 <li key={index} className="flex items-start gap-2">
                                   <MessageCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                                  <span>{reason}</span>
+                                  <span>{item.reason} - <span className="font-medium text-foreground">{item.user}</span></span>
                                 </li>
                             ))}
                         </ul>
@@ -344,5 +344,3 @@ export default function IssueDetailPage() {
     </>
   );
 }
-
-    

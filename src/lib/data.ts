@@ -36,8 +36,19 @@ export async function getIssues(): Promise<Issue[]> {
       {
         $lookup: {
           from: 'flags', // The collection name for FlagModel
-          localField: '_id',
-          foreignField: 'issueId',
+          let: { issue_id: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$issueId", "$$issue_id"] } } },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'flagger'
+              }
+            },
+            { $unwind: '$flagger' }
+          ],
           as: 'flags'
         }
       },
@@ -71,7 +82,10 @@ export async function getIssues(): Promise<Issue[]> {
                 }
               },
               as: 'redFlag',
-              in: '$$redFlag.reason'
+              in: {
+                reason: '$$redFlag.reason',
+                user: '$$redFlag.flagger.name'
+              }
             }
           }
         }
@@ -114,7 +128,7 @@ export async function getIssues(): Promise<Issue[]> {
         proofHint: issue.proofHint,
         greenFlags: issue.greenFlags || 0,
         redFlags: issue.redFlags || 0,
-        redFlagReasons: issue.redFlagReasons?.filter(Boolean) || [], // Filter out null/empty reasons
+        redFlagReasons: issue.redFlagReasons?.filter((r: any) => r.reason) || [],
         statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
           ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
           : [{ status: capitalize(issue.status || 'pending'), date: issue.createdAt }] // Create default history
@@ -263,5 +277,3 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
-
-    

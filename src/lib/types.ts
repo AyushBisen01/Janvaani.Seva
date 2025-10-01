@@ -28,7 +28,7 @@ export interface Issue {
   statusHistory?: { status: IssueStatus | string, date: Date | string }[];
   greenFlags?: number;
   redFlags?: number;
-  redFlagReasons?: string[];
+  redFlagReasons?: { reason: string; user: string }[];
 }
 
 export type UserRole = "Super Admin" | "Department Head" | "Staff" | "Citizen";
@@ -56,5 +56,3 @@ export interface Flag {
     reason?: string;
     createdAt: Date | string;
 }
-
-    
