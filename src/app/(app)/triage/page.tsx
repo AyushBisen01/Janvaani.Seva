@@ -255,7 +255,7 @@ export default function TriagePage() {
   ) => {
     const updates = ids.map(id => ({
         id,
-        status: 'Assigned' as const,
+        status: 'inProgress' as const,
         assignedTo: department,
         priority,
     }));

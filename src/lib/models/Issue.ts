@@ -17,7 +17,7 @@ interface IIssue extends Document {
   createdAt: Date;
   updatedAt: Date;
   statusHistory: { status: string; date: Date, notes?: string }[];
-  assignedDepartment?: string;
+  assignedTo?: string;
   resolvedAt?: Date;
   proofUrl?: string;
   proofHint?: string;
@@ -46,7 +46,7 @@ const IssueSchema: Schema<IIssue> = new Schema({
     }],
     default: []
   },
-  assignedDepartment: String,
+  assignedTo: String,
   resolvedAt: Date,
   proofUrl: String,
   proofHint: String,

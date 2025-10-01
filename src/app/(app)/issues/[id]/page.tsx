@@ -135,7 +135,7 @@ export default function IssueDetailPage() {
   const handleAssign = (ids: string[], department: string, priority: IssuePriority) => {
     const issueId = ids[0];
      updateIssue(issueId, { 
-        status: 'Assigned', 
+        status: 'inProgress', 
         assignedTo: department, 
         priority,
     });
