@@ -4,6 +4,8 @@ import { getIssues, updateIssue, updateMultipleIssues } from '@/lib/data';
 import type { Issue } from '@/lib/types';
 import mongoose from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const issues = await getIssues();
