@@ -16,7 +16,7 @@ interface IIssue extends Document {
   submittedBy: string;
   createdAt: Date;
   updatedAt: Date;
-  statusHistory: { status: string; date: Date }[];
+  statusHistory: { status: string; date: Date, notes?: string }[];
   assignedDepartment?: string;
   resolvedAt?: Date;
   proofUrl?: string;
@@ -41,7 +41,8 @@ const IssueSchema: Schema<IIssue> = new Schema({
   statusHistory: {
     type: [{
         status: String,
-        date: Date
+        date: Date,
+        notes: String,
     }],
     default: []
   },
@@ -61,3 +62,5 @@ const IssueSchema: Schema<IIssue> = new Schema({
 const IssueModel: Model<IIssue> = mongoose.models.Issue || mongoose.model<IIssue>('Issue', IssueSchema);
 
 export default IssueModel;
+
+    

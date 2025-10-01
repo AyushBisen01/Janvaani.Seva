@@ -17,6 +17,68 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
+    // --- START: AUTO-APPROVAL/REJECTION LOGIC ---
+    const approvalThreshold = 20;
+    const rejectionThreshold = 20;
+
+    const pendingIssuesForTriage = await IssueModel.aggregate([
+      { $match: { status: 'pending' } },
+      {
+        $lookup: {
+          from: 'flags',
+          localField: '_id',
+          foreignField: 'issueId',
+          as: 'flags'
+        }
+      },
+      {
+        $addFields: {
+          greenFlags: { $size: { $filter: { input: '$flags', as: 'flag', cond: { $eq: ['$$flag.type', 'green'] } } } },
+          redFlags: { $size: { $filter: { input: '$flags', as: 'flag', cond: { $eq: ['$$flag.type', 'red'] } } } }
+        }
+      },
+      {
+        $match: {
+          $or: [
+            { greenFlags: { $gte: approvalThreshold } },
+            { redFlags: { $gte: rejectionThreshold } }
+          ]
+        }
+      }
+    ]);
+
+    const issuesToApprove = pendingIssuesForTriage.filter(i => i.greenFlags >= approvalThreshold).map(i => i._id);
+    const issuesToReject = pendingIssuesForTriage.filter(i => i.redFlags >= rejectionThreshold).map(i => i._id);
+    
+    const bulkOps = [];
+    if (issuesToApprove.length > 0) {
+      bulkOps.push({
+        updateMany: {
+          filter: { _id: { $in: issuesToApprove } },
+          update: { 
+            $set: { status: 'approved' },
+            $push: { statusHistory: { status: 'approved', date: new Date(), notes: 'Auto-approved by crowd consensus.' } }
+          }
+        }
+      });
+    }
+    if (issuesToReject.length > 0) {
+       bulkOps.push({
+        updateMany: {
+          filter: { _id: { $in: issuesToReject } },
+          update: { 
+            $set: { status: 'rejected' },
+            $push: { statusHistory: { status: 'rejected', date: new Date(), notes: 'Auto-rejected by crowd consensus.' } }
+          }
+        }
+      });
+    }
+
+    if (bulkOps.length > 0) {
+      await IssueModel.bulkWrite(bulkOps);
+    }
+    // --- END: AUTO-APPROVAL/REJECTION LOGIC ---
+
     // Aggregate to get flag counts and reasons
     const realIssues = await IssueModel.aggregate([
       {
@@ -102,6 +164,9 @@ export async function getIssues(): Promise<Issue[]> {
       let status = capitalize(issue.status || 'pending');
       if (issue.status === 'inProgress') { // Match "inProgress" from DB
         status = 'Assigned';
+      }
+      if (issue.status === 'approved') {
+        status = 'Approved';
       }
 
       return {
@@ -262,3 +327,5 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
+
+    
