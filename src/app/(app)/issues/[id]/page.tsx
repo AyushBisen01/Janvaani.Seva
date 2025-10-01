@@ -39,6 +39,8 @@ import { useToast } from '@/hooks/use-toast';
 import { AssignIssueDialog } from '@/components/issues/assign-issue-dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IssueDetailMap } from '@/components/issues/issue-detail-map';
+import { Progress } from '@/components/ui/progress';
+
 
 const statusColors: Record<IssueStatus, string> = {
     Pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -154,6 +156,11 @@ export default function IssueDetailPage() {
     { icon: HardHat, label: 'Assigned To', value: issue.assignedTo || "N/A" },
     { icon: User, label: 'Citizen', value: `${issue.citizen.name} (${issue.citizen.contact})` },
   ];
+  
+  const totalFlags = (issue.greenFlags ?? 0) + (issue.redFlags ?? 0);
+  const greenFlagPercentage = totalFlags > 0 ? ((issue.greenFlags ?? 0) / totalFlags) * 100 : 0;
+  const redFlagPercentage = totalFlags > 0 ? ((issue.redFlags ?? 0) / totalFlags) * 100 : 0;
+
 
   return (
     <>
@@ -211,33 +218,49 @@ export default function IssueDetailPage() {
            <Card>
               <CardHeader>
                   <CardTitle className="font-headline">Community Feedback</CardTitle>
+                  <CardDescription>How the community is responding to this issue.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                  <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-2 text-green-600">
-                        <ThumbsUp className="h-5 w-5" />
-                        <p className="font-semibold text-lg">{issue.greenFlags ?? 0}</p>
-                        <p className="text-sm text-muted-foreground">Green Flags</p>
+              <CardContent className="grid gap-6">
+                <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <ThumbsUp className="h-5 w-5 text-green-500" />
+                                <span className="font-semibold">Green Flags</span>
+                            </div>
+                            <span className="font-bold text-lg">{issue.greenFlags ?? 0}</span>
+                        </div>
+                        <Progress value={greenFlagPercentage} className="h-2 [&>div]:bg-green-500" />
+                        <p className="text-xs text-muted-foreground text-center">{greenFlagPercentage.toFixed(0)}% of community members find this report helpful.</p>
                     </div>
-                     <div className="flex items-center gap-2 text-red-600">
-                        <ThumbsDown className="h-5 w-5" />
-                        <p className="font-semibold text-lg">{issue.redFlags ?? 0}</p>
-                        <p className="text-sm text-muted-foreground">Red Flags</p>
+                     <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <ThumbsDown className="h-5 w-5 text-red-500" />
+                                <span className="font-semibold">Red Flags</span>
+                            </div>
+                             <span className="font-bold text-lg">{issue.redFlags ?? 0}</span>
+                        </div>
+                        <Progress value={redFlagPercentage} className="h-2 [&>div]:bg-red-500" />
+                         <p className="text-xs text-muted-foreground text-center">{redFlagPercentage.toFixed(0)}% believe this report is inaccurate or a duplicate.</p>
                     </div>
                 </div>
 
                 {issue.redFlagReasons && issue.redFlagReasons.length > 0 && (
                     <div>
                         <Separator className="my-4" />
-                        <h4 className="text-sm font-semibold mb-2">Red Flag Reasons:</h4>
-                        <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
+                        <h4 className="text-sm font-semibold mb-3">Red Flag Reasons:</h4>
+                        <div className="space-y-3">
                             {issue.redFlagReasons.map((item, index) => (
-                                <li key={index} className="flex items-start gap-2">
-                                  <MessageCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                                  <span>{item.reason} - <span className="font-medium text-foreground">{item.user}</span></span>
-                                </li>
+                                <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                                  <MessageCircle className="h-5 w-5 mt-0.5 shrink-0 text-muted-foreground" />
+                                  <div>
+                                    <p className="text-sm text-foreground">"{item.reason}"</p>
+                                    <p className="text-xs text-muted-foreground mt-1">- {item.user}</p>
+                                  </div>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 )}
               </CardContent>
@@ -344,3 +367,5 @@ export default function IssueDetailPage() {
     </>
   );
 }
+
+    
