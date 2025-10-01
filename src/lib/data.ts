@@ -17,78 +17,104 @@ export async function getIssues(): Promise<Issue[]> {
   try {
     await dbConnect();
     
-    // --- START: AGGREGATE AND UPDATE FLAG COUNTS ---
-    const flagCounts = await FlagModel.aggregate([
-        {
-            $group: {
-                _id: '$issueId',
-                greenFlags: { $sum: { $cond: [{ $eq: ['$type', 'green'] }, 1, 0] } },
-                redFlags: { $sum: { $cond: [{ $eq: ['$type', 'red'] }, 1, 0] } },
-            }
-        }
-    ]);
-
-    if (flagCounts.length > 0) {
-        const flagBulkOps = flagCounts.map(fc => ({
-            updateOne: {
-                filter: { _id: fc._id },
-                update: { $set: { greenFlags: fc.greenFlags, redFlags: fc.redFlags } }
-            }
-        }));
-        await IssueModel.bulkWrite(flagBulkOps);
-    }
-    // --- END: AGGREGATE AND UPDATE FLAG COUNTS ---
-
-
-    // --- START: AUTO-APPROVAL/REJECTION LOGIC ---
+    // --- START: CONSOLIDATED FLAG COUNTING & AUTO-APPROVAL/REJECTION LOGIC ---
     const approvalThreshold = 25;
     const rejectionThreshold = 25;
 
-    const pendingIssuesForTriage = await IssueModel.find({
-        status: 'Pending',
-        $or: [
-            { greenFlags: { $gte: approvalThreshold } },
-            { redFlags: { $gte: rejectionThreshold } }
-        ]
-    }).lean();
+    // This pipeline calculates flag counts and determines new statuses in one go
+    const issuesToUpdate = await IssueModel.aggregate([
+      {
+        $lookup: {
+          from: 'flags',
+          localField: '_id',
+          foreignField: 'issueId',
+          as: 'flags'
+        }
+      },
+      {
+        $addFields: {
+          greenFlags: {
+            $size: {
+              $filter: { input: '$flags', as: 'flag', cond: { $eq: ['$$flag.type', 'green'] } }
+            }
+          },
+          redFlags: {
+            $size: {
+              $filter: { input: '$flags', as: 'flag', cond: { $eq: ['$$flag.type', 'red'] } }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          // Determine the new status if thresholds are met
+          newStatus: {
+            $switch: {
+              branches: [
+                {
+                  case: { $and: [{ $eq: ['$status', 'Pending'] }, { $gte: ['$greenFlags', approvalThreshold] }] },
+                  then: 'Approved'
+                },
+                {
+                  case: { $and: [{ $eq: ['$status', 'Pending'] }, { $gte: ['$redFlags', rejectionThreshold] }] },
+                  then: 'Rejected'
+                }
+              ],
+              default: '$status' // Keep original status if no condition is met
+            }
+          }
+        }
+      },
+      {
+        // Project only the fields needed for the update operation
+        $project: {
+          _id: 1,
+          greenFlags: 1,
+          redFlags: 1,
+          newStatus: 1,
+          status: 1, // original status
+        }
+      }
+    ]);
 
-    const issuesToApprove = pendingIssuesForTriage.filter(i => i.greenFlags >= approvalThreshold).map(i => i._id);
-    const issuesToReject = pendingIssuesForTriage.filter(i => i.redFlags >= rejectionThreshold).map(i => i._id);
-    
-    const bulkOps = [];
-    if (issuesToApprove.length > 0) {
-      bulkOps.push({
-        updateMany: {
-          filter: { _id: { $in: issuesToApprove } },
-          update: { 
-            $set: { status: 'Approved' },
-            $push: { statusHistory: { status: 'Approved', date: new Date(), notes: 'Auto-approved by crowd consensus.' } }
-          }
+    const bulkOps = issuesToUpdate.map(issue => {
+      const updateOp: any = {
+        $set: {
+          greenFlags: issue.greenFlags,
+          redFlags: issue.redFlags,
         }
-      });
-    }
-    if (issuesToReject.length > 0) {
-       bulkOps.push({
-        updateMany: {
-          filter: { _id: { $in: issuesToReject } },
-          update: { 
-            $set: { status: 'Rejected' },
-            $push: { statusHistory: { status: 'Rejected', date: new Date(), notes: 'Auto-rejected by crowd consensus.' } }
-          }
+      };
+
+      // If the status has changed, update it and push to history
+      if (issue.newStatus !== issue.status) {
+        updateOp.$set.status = issue.newStatus;
+        updateOp.$push = { 
+          statusHistory: { 
+            status: issue.newStatus, 
+            date: new Date(), 
+            notes: `Auto-${issue.newStatus.toLowerCase()} by crowd consensus.` 
+          } 
+        };
+      }
+
+      return {
+        updateOne: {
+          filter: { _id: issue._id },
+          update: updateOp
         }
-      });
-    }
+      };
+    });
 
     if (bulkOps.length > 0) {
       await IssueModel.bulkWrite(bulkOps);
     }
-    // --- END: AUTO-APPROVAL/REJECTION LOGIC ---
+    // --- END: CONSOLIDATED LOGIC ---
 
-    // Aggregate to get flag counts and reasons
+    // Now, fetch all issues with the updated data for the frontend
     const realIssues = await IssueModel.aggregate([
       {
         $lookup: {
-          from: 'users', // The collection name for UserModel
+          from: 'users',
           localField: 'userId',
           foreignField: '_id',
           as: 'user'
@@ -102,7 +128,7 @@ export async function getIssues(): Promise<Issue[]> {
       },
       {
         $lookup: {
-          from: 'flags', // The collection name for FlagModel
+          from: 'flags',
           let: { issue_id: "$_id" },
           pipeline: [
             { $match: { $expr: { $eq: ["$issueId", "$$issue_id"] } } },
@@ -114,7 +140,7 @@ export async function getIssues(): Promise<Issue[]> {
                 as: 'flagger'
               }
             },
-            { $unwind: '$flagger' }
+            { $unwind: { path: '$flagger', preserveNullAndEmptyArrays: true } }
           ],
           as: 'flags'
         }
@@ -133,7 +159,7 @@ export async function getIssues(): Promise<Issue[]> {
               as: 'redFlag',
               in: {
                 reason: '$$redFlag.reason',
-                user: '$$redFlag.flagger.name'
+                user: { $ifNull: ['$$redFlag.flagger.name', 'Anonymous'] }
               }
             }
           }
@@ -149,11 +175,8 @@ export async function getIssues(): Promise<Issue[]> {
       const issueIdString = issue._id.toString();
       
       let status = capitalize(issue.status || 'Pending');
-      if (issue.status === 'inProgress') { // Match "inProgress" from DB
+      if (issue.status === 'inProgress') {
         status = 'Assigned';
-      }
-      if (issue.status === 'approved') {
-        status = 'Approved';
       }
 
       return {
@@ -166,24 +189,24 @@ export async function getIssues(): Promise<Issue[]> {
           lng: issue.coordinates?.longitude || 0,
         },
         status: status as any,
-        priority: issue.priority || 'Medium', // Default priority
+        priority: issue.priority || 'Medium',
         reportedAt: issue.createdAt,
         resolvedAt: issue.resolvedAt,
-        assignedTo: issue.assignedTo, // Use assignedTo from DB
+        assignedTo: issue.assignedTo,
         citizen: {
           name: issue.user?.name || issue.submittedBy || 'Unknown',
           contact: issue.user?.email || 'N/A',
         },
-        imageUrl: issue.imageUrl || '', // Use the imageUrl from the issue itself
-        imageHint: issue.title, // Use title as a hint
+        imageUrl: issue.imageUrl || '',
+        imageHint: issue.title,
         proofUrl: issue.proofUrl,
         proofHint: issue.proofHint,
         greenFlags: issue.greenFlags || 0,
         redFlags: issue.redFlags || 0,
         redFlagReasons: issue.redFlagReasons?.filter((r: any) => r.reason) || [],
         statusHistory: issue.statusHistory && issue.statusHistory.length > 0 
-          ? issue.statusHistory.map(h => ({ status: capitalize(h.status), date: h.date }))
-          : [{ status: capitalize(issue.status || 'Pending'), date: issue.createdAt }] // Create default history
+          ? issue.statusHistory.map((h: any) => ({ status: capitalize(h.status), date: h.date }))
+          : [{ status: capitalize(issue.status || 'Pending'), date: issue.createdAt }]
       };
     });
 
@@ -316,5 +339,3 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
         throw error;
     }
 }
-
-    
