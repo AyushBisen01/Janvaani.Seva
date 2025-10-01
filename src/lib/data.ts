@@ -186,42 +186,28 @@ export async function updateIssue(id: string, updates: Partial<Issue>) {
             return;
         }
         
-        const updateOp: any = {};
+        const updateOp: any = { $set: {} };
         
-        // Handle status separately
         if (updates.status) {
             let newStatus = updates.status.toLowerCase();
-            // Map "Assigned" from dashboard to "inProgress" for the database
             if (newStatus === 'assigned') {
                 newStatus = 'inProgress';
             }
-            
             const currentStatus = (issueToUpdate.status || 'pending').toLowerCase();
             if (newStatus !== currentStatus) {
-                if (!updateOp.$set) updateOp.$set = {};
                 updateOp.$set.status = newStatus;
-                
-                const newHistoryEntry = { status: newStatus, date: new Date() };
-
-                // Atomically add to statusHistory array
-                if (!updateOp.$push) updateOp.$push = {};
-                updateOp.$push.statusHistory = newHistoryEntry;
+                updateOp.$push = { statusHistory: { status: newStatus, date: new Date() } };
             }
         }
         
-        // Handle other fields
-        for (const key in updates) {
-            const typedKey = key as keyof Issue;
-            if (typedKey !== 'status' && typedKey !== 'id') {
-                const value = (updates as any)[typedKey];
-                if (value !== undefined) {
-                    if (!updateOp.$set) updateOp.$set = {};
-                    (updateOp.$set as any)[typedKey] = value;
-                }
-            }
+        if (updates.assignedTo) {
+            updateOp.$set.assignedTo = updates.assignedTo;
+        }
+        if (updates.priority) {
+            updateOp.$set.priority = updates.priority;
         }
         
-        if (Object.keys(updateOp).length > 0) {
+        if (Object.keys(updateOp.$set).length > 0) {
             await IssueModel.findByIdAndUpdate(id, updateOp, { new: true, upsert: false }).lean();
         }
 
@@ -244,7 +230,6 @@ export async function updateMultipleIssues(updates: (Partial<Issue> & {id: strin
             
             if (updateData.status) {
                 let newStatus = updateData.status.toLowerCase();
-                 // Map "Assigned" from dashboard to "inProgress" for the database
                 if (newStatus === 'assigned') {
                     newStatus = 'inProgress';
                 }
